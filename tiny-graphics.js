@@ -28,6 +28,7 @@ class Vec extends Float32Array        // Vectors of floating point numbers.  Thi
   plus       (b) { return this.map(   (x,i) => x +  b[i]                ) }
   minus      (b) { return this.map(   (x,i) => x -  b[i]                ) }
   mult_pairs (b) { return this.map(   (x,i) => x *  b[i]                ) }
+  div_pairs (b) { return this.map(    (x,i) => x /  b[i]                ) }
   scale      (s) { this.forEach(  (x, i, a) => a[i] *= s                ) }
   times      (s) { return this.map(       x => s*x                      ) }
   randomized (s) { return this.map(       x => x + s*(Math.random()-.5) ) }
@@ -40,7 +41,7 @@ class Vec extends Float32Array        // Vectors of floating point numbers.  Thi
     if( this.length == 4 ) return this[0]*b[0] + this[1]*b[1] + this[2]*b[2] + this[3]*b[3];
     if( this.length >  4 ) return this.reduce( ( acc, x, i ) => { return acc + x*b[i]; }, 0 );
     return this[0]*b[0] + this[1]*b[1];                           // Assume a minimum length of 2.
-  }                                       
+  }
   static cast( ...args ) { return args.map( x => Vec.from(x) ); } // For avoiding repeatedly typing Vec.of in lists.
   to3()          { return Vec.of( this[0], this[1], this[2]           ); }
   to4( isPoint ) { return Vec.of( this[0], this[1], this[2], +isPoint ); }
@@ -70,13 +71,13 @@ class Mat extends Array                         // M by N matrices of floats.  E
   plus     (b) { return this.map(   (r,i) => r.map  ( (x,j) => x +  b[i][j] ) ) }
   minus    (b) { return this.map(   (r,i) => r.map  ( (x,j) => x -  b[i][j] ) ) }
   transposed() { return this.map(   (r,i) => r.map  ( (x,j) =>   this[j][i] ) ) }
-  times    (b)                                                                       
+  times    (b)
     { const len = b.length;
       if( typeof len  === "undefined" ) return this.map( r => r.map( x => b*x ) );   // Mat * scalar case.
-      const len2 = b[0].length;    
+      const len2 = b[0].length;
       if( typeof len2 === "undefined" )
       { let result = new Vec( this.length );                                         // Mat * Vec case.
-        for( let r=0; r < len; r++ ) result[r] = b.dot(this[r]);                      
+        for( let r=0; r < len; r++ ) result[r] = b.dot(this[r]);
         return result;
       }
       let result = Mat.from( new Array( this.length ) );
@@ -105,7 +106,7 @@ window.Mat4 = window.tiny_graphics.Mat4 =
 class Mat4 extends Mat                               // Generate special 4x4 matrices that are useful for graphics.
 { static identity()       { return Mat.of( [ 1,0,0,0 ], [ 0,1,0,0 ], [ 0,0,1,0 ], [ 0,0,0,1 ] ); };
   static rotation( angle, axis )                                                    // Requires a scalar (angle) and a 3x1 Vec (axis)
-                          { let [ x, y, z ] = Vec.from( axis ).normalized(), 
+                          { let [ x, y, z ] = Vec.from( axis ).normalized(),
                                    [ c, s ] = [ Math.cos( angle ), Math.sin( angle ) ], omc = 1.0 - c;
                             return Mat.of( [ x*x*omc + c,   x*y*omc - z*s, x*z*omc + y*s, 0 ],
                                            [ x*y*omc + z*s, y*y*omc + c,   y*z*omc - x*s, 0 ],
@@ -121,15 +122,15 @@ class Mat4 extends Mat                               // Generate special 4x4 mat
                                            [ 0, 1, 0, t[1] ],
                                            [ 0, 0, 1, t[2] ],
                                            [ 0, 0, 0,   1  ] );
-                          }                      
+                          }
   // Note:  look_at() assumes the result will be used for a camera and stores its result in inverse space.  You can also use
-  // it to point the basis of any *object* towards anything but you must re-invert it first.  Each input must be 3x1 Vec.                         
+  // it to point the basis of any *object* towards anything but you must re-invert it first.  Each input must be 3x1 Vec.
   static look_at( eye, at, up ) { let z = at.minus( eye ).normalized(),
                                       x =  z.cross( up  ).normalized(),        // Compute vectors along the requested coordinate axes.
                                       y =  x.cross( z   ).normalized();        // This is the "updated" and orthogonalized local y axis.
                             if( !x.every( i => i==i ) )                  // Check for NaN, indicating a degenerate cross product, which
                               throw "Two parallel vectors were given";   // happens if eye == at, or if at minus eye is parallel to up.
-                            z.scale( -1 );                               // Enforce right-handed coordinate system.                                   
+                            z.scale( -1 );                               // Enforce right-handed coordinate system.
                             return Mat4.translation([ -x.dot( eye ), -y.dot( eye ), -z.dot( eye ) ])
                                    .times( Mat.of( x.to4(0), y.to4(0), z.to4(0), Vec.of( 0,0,0,1 ) ) );
                           }
@@ -174,14 +175,14 @@ class Mat4 extends Mat                               // Generate special 4x4 mat
 
 window.Keyboard_Manager = window.tiny_graphics.Keyboard_Manager =
 class Keyboard_Manager     // This class maintains a running list of which keys are depressed.  You can map combinations of shortcut
-  {                        // keys to trigger callbacks you provide by calling add().  See add()'s arguments.  The shortcut list is 
+  {                        // keys to trigger callbacks you provide by calling add().  See add()'s arguments.  The shortcut list is
                            // indexed by convenient strings showing each bound shortcut combination.  The constructor optionally
                            // takes "target", which is the desired DOM element for keys to be pressed inside of, and
                            // "callback_behavior", which will be called for every key action and allows extra behavior on each event
                            // -- giving an opportunity to customize their bubbling, preventDefault, and more.  It defaults to no
                            // additional behavior besides the callback itself on each assigned key action.
     constructor( target = document, callback_behavior = ( callback, event ) => callback( event ) )
-      { this.saved_controls = {};     
+      { this.saved_controls = {};
         this.actively_pressed_keys = new Set();
         this.callback_behavior = callback_behavior;
         target.addEventListener( "keydown",     this.key_down_handler.bind( this ) );
@@ -203,16 +204,16 @@ class Keyboard_Manager     // This class maintains a running list of which keys 
     key_up_handler( event )
       { const lower_symbols = "qwertyuiopasdfghjklzxcvbnm1234567890-=[]\\;',./",
               upper_symbols = "QWERTYUIOPASDFGHJKLZXCVBNM!@#$%^&*()_+{}|:\"<>?";
-        
+
         const lifted_key_symbols = [ event.key, upper_symbols[ lower_symbols.indexOf( event.key ) ],
                                                 lower_symbols[ upper_symbols.indexOf( event.key ) ] ];
-                                                                                          // Call keyup for any shortcuts 
+                                                                                          // Call keyup for any shortcuts
         for( let saved of Object.values( this.saved_controls ) )                          // that depended on the released
           if( lifted_key_symbols.some( s => saved.shortcut_combination.includes( s ) ) )  // key or its shift-key counterparts.
             this.callback_behavior( saved.keyup_callback, event );                  // The keys match, so fire the callback.
         lifted_key_symbols.forEach( k => this.actively_pressed_keys.delete( k ) );
       }
-      // Method add() adds a keyboard operation.  The argument shortcut_combination wants an array of strings that follow 
+      // Method add() adds a keyboard operation.  The argument shortcut_combination wants an array of strings that follow
       // standard KeyboardEvent key names. Both the keyup and keydown callbacks for any key combo are optional.
     add( shortcut_combination, callback = () => {}, keyup_callback = () => {} )
       { this.saved_controls[ shortcut_combination.join('+') ] = { shortcut_combination, callback, keyup_callback }; }
@@ -220,7 +221,7 @@ class Keyboard_Manager     // This class maintains a running list of which keys 
 
 
 window.Vertex_Buffer = window.tiny_graphics.Vertex_Buffer =
-class Vertex_Buffer           // To use Vertex_Buffer, make a subclass of it that overrides the constructor and fills in the right fields.  
+class Vertex_Buffer           // To use Vertex_Buffer, make a subclass of it that overrides the constructor and fills in the right fields.
 {                             // Vertex_Buffer organizes data related to one 3D shape and copies it into GPU memory.  That data is broken
                               // down per vertex in the shape.  You can make several fields that you can look up in a vertex; for each
                               // field, a whole array will be made here of that data type and it will be indexed per vertex.  Along with
@@ -241,7 +242,7 @@ class Vertex_Buffer           // To use Vertex_Buffer, make a subclass of it tha
           gl.bufferData( gl.ARRAY_BUFFER, Mat.flatten_2D_to_1D( this[n] ), gl.STATIC_DRAW );
         }
       if( this.indexed && write_to_indices )
-      { gl.getExtension( "OES_element_index_uint" );          // Load an extension to allow shapes with more 
+      { gl.getExtension( "OES_element_index_uint" );          // Load an extension to allow shapes with more
         this.index_buffer = gl.createBuffer();                // vertices than type "short" can hold.
         gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, this.index_buffer );
         gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint32Array( this.indices ), gl.STATIC_DRAW );
@@ -250,8 +251,8 @@ class Vertex_Buffer           // To use Vertex_Buffer, make a subclass of it tha
     }
   execute_shaders( gl, type )     // Draws this shape's entire vertex buffer.
     { if( this.indexed )
-      { gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, this.index_buffer );                          
-        gl.drawElements( this.gl[type], this.indices.length, gl.UNSIGNED_INT, 0 ) 
+      { gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, this.index_buffer );
+        gl.drawElements( this.gl[type], this.indices.length, gl.UNSIGNED_INT, 0 )
       }                                                               // If no indices were provided, assume the vertices are arranged
       else  gl.drawArrays( this.gl[type], 0, this.positions.length );          // as triples of positions in a field called "positions".
     }
@@ -268,11 +269,11 @@ class Vertex_Buffer           // To use Vertex_Buffer, make a subclass of it tha
           }
         gl.enableVertexAttribArray( attribute.index );
         gl.bindBuffer( gl.ARRAY_BUFFER, this.array_names_mapping_to_WebGLBuffers[ buffer_name ] ); // Activate the correct buffer.
-        gl.vertexAttribPointer( attribute.index, attribute.size, attribute.type,                   // Populate each attribute 
+        gl.vertexAttribPointer( attribute.index, attribute.size, attribute.type,                   // Populate each attribute
                                 attribute.normalized, attribute.stride, attribute.pointer );       // from the active buffer.
       }
       this.execute_shaders( gl, type );                                                // Run the shaders to draw every triangle now.
-    }                                                                  
+    }
 }
 
 
@@ -282,27 +283,27 @@ class Shape extends Vertex_Buffer
             // Shape extends Vertex_Buffer's functionality for copying shapes into buffers the graphics card's memory.  It also adds the
             // basic assumption that each vertex will have a 3D position and a 3D normal vector as available fields to look up.  This means
             // there will be at least two arrays for the user to fill in: "positions" enumerating all the vertices' locations, and "normals"
-            // enumerating all vertices' normal vectors pointing away from the surface.  Both are of type Vec of length 3.  By including 
+            // enumerating all vertices' normal vectors pointing away from the surface.  Both are of type Vec of length 3.  By including
             // these, Shape adds to class Vertex_Buffer the ability to compound shapes in together into a single performance-friendly
             // Vertex_Buffer, placing this shape into a larger one at a custom transforms by adjusting positions and normals with a call to
             // insert_transformed_copy_into().  Compared to Vertex_Buffer we also gain the ability via flat-shading to compute normals from
             // scratch for a shape that has none, and the ability to eliminate inter-triangle sharing of vertices for any data we want to
             // abruptly vary as we cross over a triangle edge (such as texture images).
 
-            // Like in class Vertex_Buffer we have an array "indices" to fill in as well, a list of index triples defining which three 
+            // Like in class Vertex_Buffer we have an array "indices" to fill in as well, a list of index triples defining which three
             // vertices belong to each triangle.  Call new on a Shape and fill its arrays (probably in an overridden constructor).  Then,
             // submit it to Scene_Component's submit_shapes() and the GPU buffers will receive all the per-vertex data and the triangles
             // list needed to draw the shape correctly.
 
-            // IMPORTANT: To use this class you must define all fields for every single vertex by filling in the arrays of each field, so 
-            // this includes positions, normals, any more fields a specific Shape subclass decides to include per vertex, such as texture 
+            // IMPORTANT: To use this class you must define all fields for every single vertex by filling in the arrays of each field, so
+            // this includes positions, normals, any more fields a specific Shape subclass decides to include per vertex, such as texture
             // coordinates.  Be warned that leaving any empty elements in the lists will result in an out of bounds GPU warning (and nothing
             // drawn) whenever the "indices" list contains references to that position in the lists.
   static insert_transformed_copy_into( recipient, args, points_transform = Mat4.identity() )    // For building compound shapes.
     { const temp_shape = new this( ...args );  // If you try to bypass making a temporary shape and instead directly insert new data into
                                                // the recipient, you'll run into trouble when the recursion tree stops at different depths.
       recipient.indices.push( ...temp_shape.indices.map( i => i + recipient.positions.length ) );
-      
+
       for( let a of temp_shape.array_names )            // Copy each array from temp_shape into the recipient shape.
       { if( a == "positions" )                          // Apply points_transform to all points added during this call:
           recipient[a].push( ...temp_shape[a].map( p => points_transform.times( p.to4(1) ).to3() ) );
@@ -311,11 +312,11 @@ class Shape extends Vertex_Buffer
         else recipient[a].push( ...temp_shape[a] );     // All other arrays get copied in unmodified.
       }
     }
-  make_flat_shaded_version()                            // Auto-generate a new class that re-uses any Shape's points, 
+  make_flat_shaded_version()                            // Auto-generate a new class that re-uses any Shape's points,
     { return class extends this.constructor             // but with new normals generated from flat shading.
       { constructor( ...args ) { super( ...args );  this.duplicate_the_shared_vertices();  this.flat_shade(); }
         duplicate_the_shared_vertices()
-          {   //  Prepare an indexed shape for flat shading if it is not ready -- that is, if there are any edges where 
+          {   //  Prepare an indexed shape for flat shading if it is not ready -- that is, if there are any edges where
               //  the same vertices are indexed by both the adjacent triangles, and those two triangles are not co-planar.
               //  The two would therefore fight over assigning different normal vectors to the shared vertices.
             const temp_positions = [], temp_tex_coords = [], temp_indices = [];
@@ -327,12 +328,12 @@ class Shape extends Vertex_Buffer
           {                         // Affect all recently added triangles (those past "offset" in the list).  Assumes that no
             this.indexed = false;   // vertices are shared across seams.   First, iterate through the index or position triples:
             for( let counter = 0; counter < (this.indexed ? this.indices.length : this.positions.length); counter += 3 )
-            { const indices = this.indexed ? [ this.indices[ counter ], this.indices[ counter + 1 ], this.indices[ counter + 2 ] ] : 
+            { const indices = this.indexed ? [ this.indices[ counter ], this.indices[ counter + 1 ], this.indices[ counter + 2 ] ] :
                                            [ counter, counter + 1, counter + 2 ];
               const [ p1, p2, p3 ] = indices.map( i => this.positions[ i ] );
               const n1 = p1.minus(p2).cross( p3.minus(p1) ).normalized();    // Cross the two edge vectors of this
                                                                              // triangle together to get its normal.
-               if( n1.times(.1).plus(p1).norm() < p1.norm() ) n1.scale(-1);  // Flip the normal if adding it to the 
+               if( n1.times(.1).plus(p1).norm() < p1.norm() ) n1.scale(-1);  // Flip the normal if adding it to the
                                                                              // triangle brings it closer to the origin.
               for( let i of indices ) this.normals[ i ] = Vec.from( n1 );    // Propagate this normal to the 3 vertices.
             }
@@ -342,10 +343,10 @@ class Shape extends Vertex_Buffer
   normalize_positions( keep_aspect_ratios = true )
     { const average_position = this.positions.reduce( (acc,p) => acc.plus( p.times( 1/this.positions.length ) ), Vec.of( 0,0,0 ) );
       this.positions = this.positions.map( p => p.minus( average_position  ) );           // Center the point cloud on the origin.
-      const average_lengths  = this.positions.reduce( (acc,p) => 
+      const average_lengths  = this.positions.reduce( (acc,p) =>
                                          acc.plus( p.map( x => Math.abs(x) ).times( 1/this.positions.length ) ), Vec.of( 0,0,0 ) );
       if( keep_aspect_ratios )                            // Divide each axis by its average distance from the origin.
-        this.positions = this.positions.map( p => p.map( (x,i) => x/average_lengths[i] ) );    
+        this.positions = this.positions.map( p => p.map( (x,i) => x/average_lengths[i] ) );
       else
         this.positions = this.positions.map( p => p.times( 1/average_lengths.norm() ) );
     }
@@ -354,7 +355,7 @@ class Shape extends Vertex_Buffer
 
 window.Graphics_State = window.tiny_graphics.Graphics_State =
 class Graphics_State                                            // Stores things that affect multiple shapes, such as lights and the camera.
-{ constructor( camera_transform = Mat4.identity(), projection_transform = Mat4.identity() ) 
+{ constructor( camera_transform = Mat4.identity(), projection_transform = Mat4.identity() )
     { Object.assign( this, { camera_transform, projection_transform, animation_time: 0, animation_delta_time: 0, lights: [] } ); }
 }
 
@@ -366,8 +367,8 @@ window.Color = window.tiny_graphics.Color =
 class Color extends Vec { }    // Just an alias.  Colors are special 4x1 vectors expressed as ( red, green, blue, opacity ) each from 0 to 1.
 
 window.Graphics_Addresses = window.tiny_graphics.Graphics_Addresses =
-class Graphics_Addresses    // For organizing communication with the GPU for Shaders.  Now that we've compiled the Shader, we can query 
-{                           // some things about the compiled program, such as the memory addresses it will use for uniform variables, 
+class Graphics_Addresses    // For organizing communication with the GPU for Shaders.  Now that we've compiled the Shader, we can query
+{                           // some things about the compiled program, such as the memory addresses it will use for uniform variables,
                             // and the types and indices of its per-vertex attributes.  We'll need those for building vertex buffers.
   constructor( program, gl )
   { const num_uniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
@@ -375,17 +376,17 @@ class Graphics_Addresses    // For organizing communication with the GPU for Sha
       { let u = gl.getActiveUniform(program, i).name.split('[')[0];    // Retrieve the GPU addresses of each uniform variable in the shader
         this[ u + "_loc" ] = gl.getUniformLocation( program, u );      // based on their names, and store these pointers for later.
       }
-    
+
     this.shader_attributes = {};                // Assume per-vertex attributes will each be a set of 1 to 4 floats:
     const type_to_size_mapping = { 0x1406: 1, 0x8B50: 2, 0x8B51: 3, 0x8B52: 4 };
-    const numAttribs = gl.getProgramParameter( program, gl.ACTIVE_ATTRIBUTES ); 
+    const numAttribs = gl.getProgramParameter( program, gl.ACTIVE_ATTRIBUTES );
     for ( let i = 0; i < numAttribs; i++ )      // https://github.com/greggman/twgl.js/blob/master/dist/twgl-full.js for another example.
     { const attribInfo = gl.getActiveAttrib( program, i );
       this.shader_attributes[ attribInfo.name ] = { index: gl.getAttribLocation( program, attribInfo.name ),  // Pointers to all shader
                                                     size: type_to_size_mapping[ attribInfo.type ],            // attribute variables
                                                     enabled: true, type: gl.FLOAT,
                                                     normalized: false, stride: 0, pointer: 0 };
-    } 
+    }
   }
 }
 
@@ -395,7 +396,7 @@ class Shader                   // Your subclasses of Shader will manage strings 
 { constructor( gl )            // draw every shape.  Extend the class and fill in the abstract functions; the constructor needs them.
     { Object.assign( this, { gl, program: gl.createProgram() } );
       const shared = this.shared_glsl_code() || "";
-      
+
       const vertShdr = gl.createShader( gl.VERTEX_SHADER );
       gl.shaderSource( vertShdr, shared + this.vertex_glsl_code() );
       gl.compileShader( vertShdr );
@@ -409,7 +410,7 @@ class Shader                   // Your subclasses of Shader will manage strings 
       gl.attachShader( this.program, vertShdr );
       gl.attachShader( this.program, fragShdr );
       gl.linkProgram(  this.program );
-      if( !gl.getProgramParameter( this.program, gl.LINK_STATUS) ) throw "Shader linker error: "           + gl.getProgramInfoLog( 
+      if( !gl.getProgramParameter( this.program, gl.LINK_STATUS) ) throw "Shader linker error: "           + gl.getProgramInfoLog(
                                                                                                                               this.program );
       this.g_addrs = new Graphics_Addresses( this.program, this.gl );
     }
@@ -453,33 +454,33 @@ class Webgl_Manager      // This class manages a whole graphics program for one 
     { let gl, demos = [];
       Object.assign( this, { instances: new Map(), shapes_in_use: {}, scene_components: [], prev_time: 0, canvas,
                              globals: { animate: true, graphics_state: new Graphics_State() } } );
-      
+
       for ( let name of [ "webgl", "experimental-webgl", "webkit-3d", "moz-webgl" ] )   // Get the GPU ready, creating a new WebGL context
         if (  gl = this.gl = this.canvas.getContext( name ) ) break;                    // for this canvas.
       if   ( !gl ) throw "Canvas failed to make a WebGL context.";
-      
+
       this.set_size( dimensions );
       gl.clearColor.apply( gl, background_color );    // Tell the GPU which color to clear the canvas with each frame.
       gl.enable( gl.DEPTH_TEST );   gl.enable( gl.BLEND );            // Enable Z-Buffering test with blending.
-      gl.blendFunc( gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA );           // Specify an interpolation method for blending "transparent" 
+      gl.blendFunc( gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA );           // Specify an interpolation method for blending "transparent"
                                                                       // triangles over the existing pixels.
       gl.bindTexture(gl.TEXTURE_2D, gl.createTexture() ); // A single red pixel, as a placeholder image to prevent a console warning:
       gl.texImage2D (gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 0, 0, 255]));
-         
+
       window.requestAnimFrame = ( w =>                                    // Find the correct browser's version of requestAnimationFrame()
            w.requestAnimationFrame    || w.webkitRequestAnimationFrame    // needed for queue-ing up re-display events:
         || w.mozRequestAnimationFrame || w.oRequestAnimationFrame || w.msRequestAnimationFrame
         || function( callback, element ) { w.setTimeout(callback, 1000/60);  } )( window );
     }
-  set_size( dimensions = [ 1080, 600 ] )                // This function allows you to re-size the canvas anytime.  
-    { const [ width, height ] = dimensions;             // To work, it must change the size in CSS, wait for style to re-flow, 
+  set_size( dimensions = [ 1080, 600 ] )                // This function allows you to re-size the canvas anytime.
+    { const [ width, height ] = dimensions;             // To work, it must change the size in CSS, wait for style to re-flow,
       this.canvas.style[ "width" ]  =  width + "px";    // and then change the size in canvas attributes.
-      this.canvas.style[ "height" ] = height + "px";     
-      Object.assign( this,        { width, height } );   // Have to assign to both; these attributes on a canvas 
+      this.canvas.style[ "height" ] = height + "px";
+      Object.assign( this,        { width, height } );   // Have to assign to both; these attributes on a canvas
       Object.assign( this.canvas, { width, height } );   // have a special effect on buffers, separate from their style.
       this.gl.viewport( 0, 0, width, height );           // Build the canvas's matrix for converting -1 to 1 ranged coords (NCDS)
     }                                                    // into its own pixel coords.
-  get_instance( shader_or_texture )                 // If a scene requests that the Canvas keeps a certain resource (a Shader 
+  get_instance( shader_or_texture )                 // If a scene requests that the Canvas keeps a certain resource (a Shader
     { if( this.instances[ shader_or_texture ] )     // or Texture) loaded, check if we already have one GPU-side first.
         return this.instances[ shader_or_texture ];     // Return the one that already is loaded if it exists.  Otherwise,
       if( typeof shader_or_texture == "string" )        // If a texture was requested, load it onto a GPU buffer.
@@ -495,10 +496,10 @@ class Webgl_Manager      // This class manages a whole graphics program for one 
       this.prev_time = time;
 
       this.gl.clear( this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);        // Clear the canvas's pixels and z-buffer.
-     
+
       for( let live_string of document.querySelectorAll(".live_string") ) live_string.onload( live_string );
       for ( let s of this.scene_components ) s.display( this.globals.graphics_state );            // Draw each registered animation.
-      this.event = window.requestAnimFrame( this.render.bind( this ) );   // Now that this frame is drawn, request that render() happen 
+      this.event = window.requestAnimFrame( this.render.bind( this ) );   // Now that this frame is drawn, request that render() happen
     }                                                                     // again as soon as all other web page events are processed.
 }
 
@@ -507,7 +508,7 @@ class Scene_Component       // The Scene_Component superclass is the base class 
 {                           // canvas.  Make your own subclass(es) of this and override their methods "display()" and "make_control_panel()"
                             // to make them do something.  Finally, push them onto your Webgl_Manager's "scene_components" array.
   constructor( webgl_manager, control_box )
-    { const callback_behavior = ( callback, event ) => 
+    { const callback_behavior = ( callback, event ) =>
            { callback( event );
              event.preventDefault();    // Fire the callback and cancel any default browser shortcut that is an exact match.
              event.stopPropagation();   // Don't bubble the event to parent nodes; let child elements be targetted in isolation.
@@ -515,23 +516,23 @@ class Scene_Component       // The Scene_Component superclass is the base class 
       Object.assign( this, { key_controls: new Keyboard_Manager( document, callback_behavior), globals: webgl_manager.globals } );
       control_box.appendChild( Object.assign( document.createElement("div"), { textContent: this.constructor.name, className: "control-title" } ) )
       this.control_panel = control_box.appendChild( document.createElement( "div" ) );
-      this.control_panel.className = "control-div";        
+      this.control_panel.className = "control-div";
     }
   new_line( parent=this.control_panel ) { parent.appendChild( document.createElement( "br" ) ) }    // Format a scene's control panel.
   live_string( callback, parent=this.control_panel )    // Create an element somewhere in the control panel that does reporting of the
-    {                                                   // scene's values in real time.  The event loop will constantly update all HTML 
+    {                                                   // scene's values in real time.  The event loop will constantly update all HTML
                                                         // elements made this way.
       parent.appendChild( Object.assign( document.createElement( "div"  ), { className:"live_string", onload: callback } ) );
     }
-  key_triggered_button( description, shortcut_combination, callback, color = '#'+Math.random().toString(9).slice(-6), 
+  key_triggered_button( description, shortcut_combination, callback, color = '#'+Math.random().toString(9).slice(-6),
                         release_event, recipient = this, parent = this.control_panel )      // Trigger any scene behavior by assigning a key
     { const button = parent.appendChild( document.createElement( "button" ) );              // shortcut and a labelled HTML button to it.
       button.default_color = button.style.backgroundColor = color;
-      const  press = () => { Object.assign( button.style, { 'background-color' : 'red', 
+      const  press = () => { Object.assign( button.style, { 'background-color' : 'red',
                                                             'z-index': "1", 'transform': "scale(2)" } );
                              callback.call( recipient );
                            },
-           release = () => { Object.assign( button.style, { 'background-color' : button.default_color, 
+           release = () => { Object.assign( button.style, { 'background-color' : button.default_color,
                                                             'z-index': "0", 'transform': "scale(1)" } );
                              if( !release_event ) return;
                              release_event.call( recipient );
@@ -562,7 +563,7 @@ class Scene_Component       // The Scene_Component superclass is the base class 
 window.Canvas_Widget = window.tiny_graphics.Canvas_Widget =
 class Canvas_Widget                    // Canvas_Widget embeds a WebGL demo onto a website, along with various panels of controls.
 { constructor( element, scenes, show_controls = true )   // One panel exists per each scene that's used in the canvas.  You can use up
-    { this.create( element, scenes, show_controls )      // to 16 Canvas_Widgets; browsers support up to 16 WebGL contexts per page.    
+    { this.create( element, scenes, show_controls )      // to 16 Canvas_Widgets; browsers support up to 16 WebGL contexts per page.
 
       const rules = [ ".canvas-widget { width: 1080px; background: DimGray }",
                       ".canvas-widget * { font-family: monospace }",
@@ -589,7 +590,7 @@ class Canvas_Widget                    // Canvas_Widget embeds a WebGL demo onto
                       ".link { text-decoration:underline; cursor: pointer }",
                       ".show { transform: scaleY(1); height:200px; overflow:auto }",
                       ".hide { transform: scaleY(0); height:0px; overflow:hidden  }" ];
-                      
+
       const style = document.head.appendChild( document.createElement( "style" ) );
       for( const r of rules ) document.styleSheets[document.styleSheets.length - 1].insertRule( r, 0 )
     }
@@ -600,9 +601,9 @@ class Canvas_Widget                    // Canvas_Widget embeds a WebGL demo onto
            } catch( error )
            { element.innerHTML = "<H1>Error loading the demo.</H1>" + error }
     }
-  patch_ios_bug()                               // Correct a flaw in Webkit (iPhone devices; safari mobile) that 
+  patch_ios_bug()                               // Correct a flaw in Webkit (iPhone devices; safari mobile) that
     { try{ Vec.of( 1,2,3 ).times(2) }           // breaks TypedArray.from() and TypedArray.of() in subclasses.
-      catch 
+      catch
       { Vec.of   = function()      { return new Vec( Array.from( arguments ) ) }
         Vec.from = function( arr ) { return new Vec( Array.from( arr       ) ) }
       }
@@ -612,23 +613,23 @@ class Canvas_Widget                    // Canvas_Widget embeds a WebGL demo onto
         throw "(Featured class not found)";
       const canvas = element.appendChild( document.createElement( "canvas" ) );
       const control_panels = element.appendChild( document.createElement( "table" ) );
-      control_panels.className = "control-box";      
+      control_panels.className = "control-box";
       if( !show_controls ) control_panels.style.display = "none";
       const row = control_panels.insertRow( 0 );
       this.webgl_manager = new Webgl_Manager( canvas, Color.of( 0,0,0,1 ) );  // Second parameter sets background color.
 
       for( let scene_class_name of scenes )                  // Register the initially requested scenes to the render loop.
-        this.webgl_manager.register_scene_component( new window[ scene_class_name ]( this.webgl_manager, row.insertCell() ) );   
-                           
+        this.webgl_manager.register_scene_component( new window[ scene_class_name ]( this.webgl_manager, row.insertCell() ) );
+
       this.webgl_manager.render();   // Start WebGL initialization.  Note that render() will re-queue itself for more calls.
     }
 }
 
-  
+
 window.Code_Manager = window.tiny_graphics.Code_Manager =
 class Code_Manager                            // Break up a string containing code (any es6 JavaScript).  The parser expression
 {                                             // is from https://github.com/lydell/js-tokens which states the following limitation:
-  constructor( code )                         // "If the end of a statement looks like a regex literal (even if it isn’t), it will 
+  constructor( code )                         // "If the end of a statement looks like a regex literal (even if it isn’t), it will
     { const es6_tokens_parser = RegExp( [     // be treated as one."  (This can miscolor lines of code containing divisions and comments).
         /((['"])(?:(?!\2|\\).|\\(?:\r\n|[\s\S]))*(\2)?|`(?:[^`\\$]|\\[\s\S]|\$(?!\{)|\$\{(?:[^{}]|\{[^}]*\}?)*\}?)*(`)?)/,    // Any string.
         /(\/\/.*)|(\/\*(?:[^*]|\*(?!\/))*(\*\/)?)/,                                                                           // Any comment (2 forms).  And next, any regex:
@@ -649,10 +650,10 @@ class Code_Manager                            // Break up a string containing co
           else if ( single_token[  9 ] ) token.type = "number"
           else if ( single_token[ 10 ] ) token.type = "name"
           else if ( single_token[ 11 ] ) token.type = "punctuator"
-          else if ( single_token[ 12 ] ) token.type = "whitespace"        
+          else if ( single_token[ 12 ] ) token.type = "whitespace"
           this.tokens.push( token )
           if( token.type != "whitespace" && token.type != "comment" ) this.no_comments.push( token.value );
-        }  
+        }
     }
 }
 
@@ -669,10 +670,10 @@ class Code_Widget
                  ];
 
       for( const r of rules ) document.styleSheets[0].insertRule( r, 1 );
-      
+
       if( !window[ selected_class ] ) throw "Class not found.";
       selected_class = window[ selected_class ];
-        
+
 
       element = document.querySelector( "#" + element );
       const code_panel = element.appendChild( document.createElement( "div" ) );
@@ -683,7 +684,7 @@ class Code_Widget
       this.code_display.className = "code-display";
 
       const class_list = element.appendChild( document.createElement( "table" ) );
-      class_list.className = "class-list";   
+      class_list.className = "class-list";
       const top_cell = class_list.insertRow( -1 ).insertCell( -1 );
       top_cell.colSpan = 2;
       top_cell.appendChild( document.createTextNode("Click below to navigate through all classes that are defined.") );
@@ -707,7 +708,7 @@ class Code_Widget
       third_row.style = "text-align:center";
       third_row.innerHTML = "<td><b>tiny-graphics.js</b><br>(Always the same)</td> \
                              <td><b>dependencies.js</b><br>(Different for every demo)</td>";
-    
+
       const fourth_row = class_list.insertRow( -1 );
 
       for( let list of [ tiny_graphics, classes ] )
@@ -734,7 +735,7 @@ class Code_Widget
     }
   format_code( code_string )
     { this.code_display.innerHTML = "";
-      const color_map = { string: "chocolate", comment: "green", regex: "blue", number: "magenta", 
+      const color_map = { string: "chocolate", comment: "green", regex: "blue", number: "magenta",
                             name: "black", punctuator: "red", whitespace: "black" };
 
       for( let t of new Code_Manager( code_string ).tokens )

@@ -38,14 +38,14 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
       graphics_state.lights = this.lights;        // Use the lights stored in this.lights.
       const t = graphics_state.animation_time / 1000, dt = graphics_state.animation_delta_time / 1000;
 
-      for (let i = 1; i <= 10; i++) {
-        this.shapes.forEach((ball) => ball.move(dt / 10));
+      for (let i = 1; i <= 1000; i++) {
+        this.shapes.forEach((ball) => ball.move(dt / 1000));
       }
       this.shapes.forEach((ball) => ball.draw(graphics_state, this.materials.phong));
     }
   }
 
-const g = Vec.of(0, -80, 0);
+const g = Vec.of(0, -30, 0);
 const myFloor = -5;
 
 class myBall extends Subdivision_Sphere {
@@ -54,18 +54,30 @@ class myBall extends Subdivision_Sphere {
     this.position = position;
     this.velocity = velocity;
     this.size = size;
+    this.sizeChange = Vec.of(0, 0, 0);
   }
 
   draw(graphics_state, material) {
-    let mat = Mat4.translation(this.position).times(Mat4.scale(this.size));
+    let mat = Mat4.translation(this.position).times(Mat4.scale(this.size.plus(this.sizeChange)));
     super.draw(graphics_state, mat, material);
   }
 
+  checkFloor(dt) {
+    let bottom = this.position[1] - (this.size[1] + this.sizeChange[1]);
+    if (bottom > myFloor)
+      return;
+    this.sizeChange[1] = Math.max(this.position[1] - myFloor, 0.000001) - this.size[1];
+
+    //let realSize = this.size[1] + this.sizeChange[1];
+    let a = 1000000000 * -this.sizeChange[1] / this.size[1];
+    this.      Vec.of(0, a, 0);
+  }
+
   move(dt, acceleration = g) {
-    this.position = this.position.plus(this.velocity.times(dt));
+    this.checkFloor(dt);
+    this.position = this.position.plus(this.velocity.times(dt))
+      .plus(acceleration.times(0.5 * dt * dt));
     this.velocity = this.velocity.plus(acceleration.times(dt));
-    if (this.position[1] < myFloor && this.velocity[1] < 0)
-      this.velocity[1] = -0.9 * this.velocity[1];
   }
 }
 
