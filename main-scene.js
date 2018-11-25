@@ -21,12 +21,20 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
         new myBall(Vec.of(4, 8, 0), Vec.of(-5, 5, 0)),
         new myBall(Vec.of(8, 8, 0), Vec.of(-8, 0, 0)),
       ];
+      this.myColor = [
+        Color.of(0.3, 0.3, 1, 1),
+        Color.of(1, 0.3, 0.3, 1),
+        Color.of(0.3, 1, 1, 1),
+        Color.of(1, 0.3, 1, 1),
+        Color.of(0.3, 1, 0.3, 1)
+      ]
 
       this.submit_shapes(context, this.shapes);
 
-      this.materials = {phong: context.get_instance(Phong_Shader).material(Color.of(1, 1, 1, 1))}
+      this.materials = {phong: context.get_instance(Phong_Shader).material(Color.of(0.3, 0.3, 1, 1)
+        ,{ambient:0.8, diffusivity:1, specularity:1, smoothness:80})}
 
-      this.lights = [new Light(Vec.of(0, 0, 20, 1), Color.of(1, 1, 1, 1), 100000)];
+      this.lights = [new Light(Vec.of(-20, 20, 20, 1), Color.of(1, 1, 1, 1), 100000)];
 
     }
 
@@ -53,17 +61,18 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
         });
       }
 
-      this.shapes.forEach((ball) => ball.draw(graphics_state, this.materials.phong));
+      this.shapes.forEach((ball, i) => ball.draw(graphics_state,
+        this.materials.phong.override({color:this.myColor[i]})));
     }
   }
 
 const g = Vec.of(0, -20, 0);
-const myFloor = -7;
-const leftSide = -12;
-const rightSide = 12;
+const myFloor = -8;
+const leftSide = -14;
+const rightSide = 14;
 const eps = 0.0000001;
 const springK = 2000;
-const resistance = 0.92;
+const resistance = 0.9;
 
 class myBall extends Subdivision_Sphere {
   constructor(position = Vec.of(0, 0, 0), velocity = Vec.of(0, 0, 0), size = Vec.of(1, 1, 1)) {

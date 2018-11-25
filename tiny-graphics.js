@@ -565,14 +565,14 @@ class Canvas_Widget                    // Canvas_Widget embeds a WebGL demo onto
 { constructor( element, scenes, show_controls = true )   // One panel exists per each scene that's used in the canvas.  You can use up
     { this.create( element, scenes, show_controls )      // to 16 Canvas_Widgets; browsers support up to 16 WebGL contexts per page.
 
-      const rules = [ ".canvas-widget { width: 1080px; background: DimGray }",
+      const rules = [ ".canvas-widget { width: 1080px; background: White }",
                       ".canvas-widget * { font-family: monospace }",
                       ".canvas-widget canvas { width: 1080px; height: 600px; margin-bottom:-3px }",
                       ".canvas-widget div { background: white }",
                       ".canvas-widget table { border-collapse: collapse; display:block; overflow-x: auto; }",
-                      ".canvas-widget table.control-box { width: 1080px; border:0; margin:0; max-height:380px; transition:.5s; overflow-y:scroll; background:DimGray }",
+                      ".canvas-widget table.control-box { width: 1080px; border:0; margin:0; max-height:380px; transition:.5s; overflow-y:scroll; background:White }",
                       ".canvas-widget table.control-box:hover { max-height:500px }",
-                      ".canvas-widget table.control-box td { overflow:hidden; border:0; background:DimGray; border-radius:30px }",
+                      ".canvas-widget table.control-box td { overflow:hidden; border:0; background:White; border-radius:30px }",
                       ".canvas-widget table.control-box td .control-div { background: #EEEEEE; height:338px; padding: 5px 5px 5px 30px; box-shadow: 25px 0px 60px -15px inset }",
                       ".canvas-widget table.control-box td * { background:transparent }",
                       ".canvas-widget table.control-box .control-div td { border-radius:unset }",
@@ -616,7 +616,7 @@ class Canvas_Widget                    // Canvas_Widget embeds a WebGL demo onto
       control_panels.className = "control-box";
       if( !show_controls ) control_panels.style.display = "none";
       const row = control_panels.insertRow( 0 );
-      this.webgl_manager = new Webgl_Manager( canvas, Color.of( 0,0,0,1 ) );  // Second parameter sets background color.
+      this.webgl_manager = new Webgl_Manager( canvas, Color.of( 1,1,1,1 ) );  // Second parameter sets background color.
 
       for( let scene_class_name of scenes )                  // Register the initially requested scenes to the render loop.
         this.webgl_manager.register_scene_component( new window[ scene_class_name ]( this.webgl_manager, row.insertCell() ) );
