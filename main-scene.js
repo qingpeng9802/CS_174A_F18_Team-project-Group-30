@@ -53,6 +53,7 @@ class myBall extends Subdivision_Sphere {
     super(5);
     this.position = position;
     this.velocity = velocity;
+    this.acceleration = Vec.of(0, 0, 0);  // This is a temporary variable, which is not a state.
     this.size = size;
     this.sizeChange = Vec.of(0, 0, 0);
   }
@@ -62,23 +63,29 @@ class myBall extends Subdivision_Sphere {
     super.draw(graphics_state, mat, material);
   }
 
+  update(dt)
+  {
+    this.position = this.position.plus(this.velocity.times(dt))
+      .plus(this.acceleration.times(0.5 * dt * dt));
+    this.velocity = this.velocity.plus(this.acceleration.times(dt));
+  }
+
   checkFloor(dt) {
-    let bottom = this.position[1] - (this.size[1] + this.sizeChange[1]);
-    if (bottom > myFloor)
-      return;
-    this.sizeChange[1] = Math.max(this.position[1] - myFloor, 0.000001) - this.size[1];
+
+    this.sizeChange[1] = Math.max(this.position[1] - myFloor, 0.0000001) - this.size[1];
+    this.sizeChange[1] = Math.min(this.sizeChange[1], 0);
 
     //let realSize = this.size[1] + this.sizeChange[1];
-    let a = 1000000000 * -this.sizeChange[1] / this.size[1];
-    this.      Vec.of(0, a, 0);
+    let a = 2000 * -this.sizeChange[1] / this.size[1];
+    this.acceleration = this.acceleration.plus(Vec.of(0, a, 0));
   }
 
   move(dt, acceleration = g) {
+    this.acceleration = acceleration;
     this.checkFloor(dt);
-    this.position = this.position.plus(this.velocity.times(dt))
-      .plus(acceleration.times(0.5 * dt * dt));
-    this.velocity = this.velocity.plus(acceleration.times(dt));
+    this.update(dt);
   }
+
 }
 
 class Texture_Scroll_X extends Phong_Shader {
