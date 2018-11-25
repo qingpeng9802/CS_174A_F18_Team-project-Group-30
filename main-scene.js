@@ -1,3 +1,7 @@
+function getRandomNum(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
 window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
   class Assignment_Three_Scene extends Scene_Component {
     constructor(context, control_box)     // The scene begins by requesting the camera, shapes, and materials it will need.
@@ -15,11 +19,11 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
       //        texture coordinates as required for cube #2.  You can either do this by modifying the cube code or by modifying
       //        a cube instance's texture_coords after it is already created.
       this.shapes = [
-        new myBall(Vec.of(-8, 8, 0), Vec.of(5, 5, 0)),
-        new myBall(Vec.of(-4, 8, 0), Vec.of(2, -7, 0)),
-        new myBall(Vec.of(0, 8, 0), Vec.of(5, 8, 0)),
-        new myBall(Vec.of(4, 8, 0), Vec.of(-5, 5, 0)),
-        new myBall(Vec.of(8, 8, 0), Vec.of(-8, 0, 0)),
+        new myBall(Vec.of(-8, 8, 0), Vec.of(5, 5, 0), 1),
+        new myBall(Vec.of(-4, 8, 0), Vec.of(2, -7, 0), 2),
+        new myBall(Vec.of(0, 8, 0), Vec.of(5, 8, 0), 1.2),
+        new myBall(Vec.of(4, 8, 0), Vec.of(-5, 5, 0), 2.2),
+        new myBall(Vec.of(8, 8, 0), Vec.of(-8, 0, 0), 1.5),
       ];
       this.myColor = [
         Color.of(0.3, 0.3, 1, 1),
@@ -28,16 +32,23 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
         Color.of(1, 0.3, 1, 1),
         Color.of(0.3, 1, 0.3, 1)
       ]
+      for (let i = 1; i <= 7; i++) {
+        this.shapes.push(new myBall(
+          Vec.of(getRandomNum(-8, 8), getRandomNum(-8, 8), 0),
+          Vec.of(getRandomNum(-2, 2), getRandomNum(-2, 2), 0),
+          getRandomNum(0.5, 2)));
+        this.myColor.push(Color.of(getRandomNum(0, 0.8), getRandomNum(0, 0.8), getRandomNum(0, 0.8), 1));
+      }
+
 
       this.submit_shapes(context, this.shapes);
 
       this.materials = {
-        phong: context.get_instance(Phong_Shader).material(Color.of(0.3, 0.3, 1, 1)
-          , {ambient: 0.8, diffusivity: 1, specularity: 1, smoothness: 80})
+        phong: context.get_instance(Phong_Shader).material(Color.of(0.3, 0.3, 1, 1),
+          {ambient: 0.9, diffusivity: 0.5, specularity: 0.5, smoothness: 30})
       }
 
       this.lights = [new Light(Vec.of(-20, 20, 20, 1), Color.of(1, 1, 1, 1), 100000)];
-
     }
 
     make_control_panel() { // TODO:  Implement requirement #5 using a key_triggered_button that responds to the 'c' key.
@@ -69,19 +80,20 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
   }
 
 const myFloor = -8;
-const leftSide = -14;
-const rightSide = 14;
+const leftSide = -13;
+const rightSide = 13;
 const eps = 0.00001;
 const springK = 2000;
 const resistance = 0.9;
 
 class myBall extends Subdivision_Sphere {
-  constructor(position = Vec.of(0, 0, 0), velocity = Vec.of(0, 0, 0), size = Vec.of(1, 1, 1)) {
+  constructor(position = Vec.of(0, 0, 0), velocity = Vec.of(0, 0, 0), size = 1) {
     super(5);
     this.position = position;
     this.velocity = velocity;
     this.acceleration = Vec.of(0, 0, 0);  // This is a temporary variable, which is not a state.
     this.size = size;
+    this.sizeVec = Vec.of(size, size, size);
     this.sizeChange = Vec.of(0, 0, 0);  // SizeChange is always negative.
   }
 
@@ -92,34 +104,35 @@ class myBall extends Subdivision_Sphere {
   }
 
   draw(graphics_state, material) {
-    let mat = Mat4.translation(this.position).times(Mat4.scale(this.size.plus(this.sizeChange)));
+    let mat = Mat4.translation(this.position).times(
+      Mat4.scale(this.sizeVec.plus(this.sizeChange)));
     super.draw(graphics_state, mat, material);
   }
 
   checkFloor() {
-    let change = Math.max(this.position[1] - myFloor, eps) - this.size[1];
+    let change = Math.max(this.position[1] - myFloor, eps) - this.size;
     if (change > 0) return;
     this.sizeChange[1] = change;
 
-    let a = springK * -change / this.size[1];
+    let a = springK * -change / this.size;
     this.acceleration = this.acceleration.plus(Vec.of(0, a, 0));
   }
 
   checkLeft() {
-    let change = Math.max(this.position[0] - leftSide, eps) - this.size[0];
+    let change = Math.max(this.position[0] - leftSide, eps) - this.size;
     if (change > 0) return;
     this.sizeChange[0] = change;
 
-    let a = springK * -change / this.size[0];
+    let a = springK * -change / this.size;
     this.acceleration = this.acceleration.plus(Vec.of(a, 0, 0));
   }
 
   checkRight() {
-    let change = Math.max(rightSide - this.position[0], eps) - this.size[0];
+    let change = Math.max(rightSide - this.position[0], eps) - this.size;
     if (change > 0) return;
     this.sizeChange[0] = change;
 
-    let a = springK * change / this.size[0];
+    let a = springK * change / this.size;
     this.acceleration = this.acceleration.plus(Vec.of(a, 0, 0));
   }
 
@@ -128,27 +141,35 @@ class myBall extends Subdivision_Sphere {
    * @param {myBall} ball2
    */
   static checkBall(ball1, ball2) {
-    let midPoint = ball1.position.plus(ball2.position).times(0.5);
-    let toMid = midPoint.minus(ball1.position);
-    let position = toMid.normalized();
-    let newSize = toMid;
+    let towards = ball2.position.minus(ball1.position);
+    let dis = towards.norm();
+    if (ball1.size + ball2.size < dis)
+      return;
+
+    let toContactPoint = towards.times(1 / (ball1.size + ball2.size) * ball1.size);
+
+    //if (toContactPoint.norm() > ball1.size)
+    //  return;   // Never reach here.
+
+    let position = toContactPoint.normalized();
+    let newSize = toContactPoint;
     for (let i = 0; i < 3; i++) {
       if (Math.abs(position[i]) < eps) {
-        newSize[i] = ball1.size[i];
+        newSize[i] = ball1.size;
         continue;
       }
       newSize[i] /= position[i];
-      if (newSize[i] > ball1.size[i])
-        return;
+      //if (newSize[i] > ball1.size)
+      //  return;   // Never reach here.
     }
-    ball1.sizeChange = newSize.minus(ball1.size);
+    ball1.sizeChange = newSize.minus(ball1.sizeVec);
 
-    let a = position.times(springK * ball1.sizeChange.norm() / ball1.size.norm());
+    let a = position.times(springK * ball1.sizeChange.norm() / ball1.size);
     ball2.acceleration = ball2.acceleration.plus(a);
     ball1.acceleration = ball1.acceleration.minus(a);
   }
 
-  setupNewMove(dt, acceleration = Vec.of(0, -20, 0)) {
+  setupNewMove(dt, acceleration = Vec.of(0, -10, 0)) {
     this.velocity = this.velocity.times(Math.pow(resistance, dt));
     this.acceleration = acceleration;
     this.dt = dt; // This is used to pass the the dt parameter to the member functions.
