@@ -31,8 +31,10 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
 
       this.submit_shapes(context, this.shapes);
 
-      this.materials = {phong: context.get_instance(Phong_Shader).material(Color.of(0.3, 0.3, 1, 1)
-        ,{ambient:0.8, diffusivity:1, specularity:1, smoothness:80})}
+      this.materials = {
+        phong: context.get_instance(Phong_Shader).material(Color.of(0.3, 0.3, 1, 1)
+          , {ambient: 0.8, diffusivity: 1, specularity: 1, smoothness: 80})
+      }
 
       this.lights = [new Light(Vec.of(-20, 20, 20, 1), Color.of(1, 1, 1, 1), 100000)];
 
@@ -62,15 +64,14 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
       }
 
       this.shapes.forEach((ball, i) => ball.draw(graphics_state,
-        this.materials.phong.override({color:this.myColor[i]})));
+        this.materials.phong.override({color: this.myColor[i]})));
     }
   }
 
-const g = Vec.of(0, -20, 0);
 const myFloor = -8;
 const leftSide = -14;
 const rightSide = 14;
-const eps = 0.0000001;
+const eps = 0.00001;
 const springK = 2000;
 const resistance = 0.9;
 
@@ -132,7 +133,7 @@ class myBall extends Subdivision_Sphere {
     let position = toMid.normalized();
     let newSize = toMid;
     for (let i = 0; i < 3; i++) {
-      if (position[i] == 0) {
+      if (Math.abs(position[i]) < eps) {
         newSize[i] = ball1.size[i];
         continue;
       }
@@ -147,10 +148,11 @@ class myBall extends Subdivision_Sphere {
     ball1.acceleration = ball1.acceleration.minus(a);
   }
 
-  setupNewMove(dt, acceleration = g) {
+  setupNewMove(dt, acceleration = Vec.of(0, -20, 0)) {
     this.velocity = this.velocity.times(Math.pow(resistance, dt));
     this.acceleration = acceleration;
-    this.dt = dt;
+    this.dt = dt; // This is used to pass the the dt parameter to the member functions.
+    this.sizeChange = Vec.of(0, 0, 0);
   }
 
 }
