@@ -83,24 +83,26 @@ const myFloor = -8;
 const leftSide = -13;
 const rightSide = 13;
 const eps = 0.00001;
-const springK = 2000;
+const springK = 1000;
 const resistance = 0.9;
 
 class myBall extends Subdivision_Sphere {
-  constructor(position = Vec.of(0, 0, 0), velocity = Vec.of(0, 0, 0), size = 1) {
+  constructor(position = Vec.of(0, 0, 0), velocity = Vec.of(0, 0, 0), size = 1, mass = size) {
     super(5);
     this.position = position;
     this.velocity = velocity;
-    this.acceleration = Vec.of(0, 0, 0);  // This is a temporary variable, which is not a state.
+    this.force = Vec.of(0, 0, 0);  // This is a temporary variable, which is not a state.
     this.size = size;
+    this.mass = mass;
     this.sizeVec = Vec.of(size, size, size);
     this.sizeChange = Vec.of(0, 0, 0);  // SizeChange is always negative.
   }
 
   update() {
+    let a = this.force.times(1. / this.mass)
     this.position = this.position.plus(this.velocity.times(this.dt))
-      .plus(this.acceleration.times(0.5 * this.dt * this.dt));
-    this.velocity = this.velocity.plus(this.acceleration.times(this.dt));
+      .plus(a.times(0.5 * this.dt * this.dt));
+    this.velocity = this.velocity.plus(a.times(this.dt));
   }
 
   draw(graphics_state, material) {
@@ -114,8 +116,8 @@ class myBall extends Subdivision_Sphere {
     if (change > 0) return;
     this.sizeChange[1] = change;
 
-    let a = springK * -change / this.size;
-    this.acceleration = this.acceleration.plus(Vec.of(0, a, 0));
+    let F = springK * -change;
+    this.force = this.force.plus(Vec.of(0, F, 0));
   }
 
   checkLeft() {
@@ -123,8 +125,8 @@ class myBall extends Subdivision_Sphere {
     if (change > 0) return;
     this.sizeChange[0] = change;
 
-    let a = springK * -change / this.size;
-    this.acceleration = this.acceleration.plus(Vec.of(a, 0, 0));
+    let F = springK * -change;
+    this.force = this.force.plus(Vec.of(F, 0, 0));
   }
 
   checkRight() {
@@ -132,8 +134,8 @@ class myBall extends Subdivision_Sphere {
     if (change > 0) return;
     this.sizeChange[0] = change;
 
-    let a = springK * change / this.size;
-    this.acceleration = this.acceleration.plus(Vec.of(a, 0, 0));
+    let F = springK * change;
+    this.force = this.force.plus(Vec.of(F, 0, 0));
   }
 
   /**
@@ -165,13 +167,13 @@ class myBall extends Subdivision_Sphere {
     ball1.sizeChange = newSize.minus(ball1.sizeVec);
 
     let a = position.times(springK * ball1.sizeChange.norm() / ball1.size);
-    ball2.acceleration = ball2.acceleration.plus(a);
-    ball1.acceleration = ball1.acceleration.minus(a);
+    ball2.force = ball2.force.plus(a);
+    ball1.force = ball1.force.minus(a);
   }
 
-  setupNewMove(dt, acceleration = Vec.of(0, -10, 0)) {
+  setupNewMove(dt, force = Vec.of(0, -10 * this.mass, 0)) {
     this.velocity = this.velocity.times(Math.pow(resistance, dt));
-    this.acceleration = acceleration;
+    this.force = force;
     this.dt = dt; // This is used to pass the the dt parameter to the member functions.
     this.sizeChange = Vec.of(0, 0, 0);
   }
