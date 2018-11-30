@@ -2,6 +2,18 @@ function getRandomNum(min, max) {
   return Math.random() * (max - min) + min;
 }
 
+function getRandomNumVec(a, b, c, d, e, f) {
+  return Vec.of(getRandomNum(a, b), getRandomNum(c, d), getRandomNum(e, f));
+}
+
+const myFloor = -8;
+const boxSide = 20;
+const boxFront = 30;
+const eps = 0.00001;
+const springK = 90000;
+const resistance = 0.8;
+const gravity = 9.8;
+
 window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
   class Assignment_Three_Scene extends Scene_Component {
     constructor(context, control_box)     // The scene begins by requesting the camera, shapes, and materials it will need.
@@ -10,7 +22,7 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
       if (!context.globals.has_controls)
         context.register_scene_component(new Movement_Controls(context, control_box.parentElement.insertCell()));
 
-      context.globals.graphics_state.camera_transform = Mat4.look_at(Vec.of(0, 0, 20), Vec.of(0, 0, 0), Vec.of(0, 1, 0));
+      context.globals.graphics_state.camera_transform = Mat4.look_at(Vec.of(0, 0, 50), Vec.of(0, 0, 0), Vec.of(0, 1, 0));
 
       const r = context.width / context.height;
       context.globals.graphics_state.projection_transform = Mat4.perspective(Math.PI / 4, r, .1, 1000);
@@ -18,34 +30,34 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
       // TODO:  Create two cubes, including one with the default texture coordinates (from 0 to 1), and one with the modified
       //        texture coordinates as required for cube #2.  You can either do this by modifying the cube code or by modifying
       //        a cube instance's texture_coords after it is already created.
-      this.shapes = [
-        new myBall(Vec.of(-8, 8, 0), Vec.of(5, 5, 0), 1),
-        new myBall(Vec.of(-4, 8, 0), Vec.of(2, -7, 0), 2),
-        new myBall(Vec.of(0, 8, 0), Vec.of(5, 8, 0), 1.2),
-        new myBall(Vec.of(4, 8, 0), Vec.of(-5, 5, 0), 2.2),
-        new myBall(Vec.of(8, 8, 0), Vec.of(-8, 0, 0), 1.5),
-      ];
-      this.myColor = [
-        Color.of(0.3, 0.3, 1, 1),
-        Color.of(1, 0.3, 0.3, 1),
-        Color.of(0.3, 1, 1, 1),
-        Color.of(1, 0.3, 1, 1),
-        Color.of(0.3, 1, 0.3, 1)
-      ]
-      for (let i = 1; i <= 7; i++) {
-        this.shapes.push(new myBall(
-          Vec.of(getRandomNum(-8, 8), getRandomNum(-8, 8), 0),
-          Vec.of(getRandomNum(-2, 2), getRandomNum(-2, 2), 0),
-          getRandomNum(0.5, 2)));
-        this.myColor.push(Color.of(getRandomNum(0, 0.8), getRandomNum(0, 0.8), getRandomNum(0, 0.8), 1));
+      this.shapes = {
+        ball: new Subdivision_Sphere(5),
+        floor: new Square
+      };
+
+      myBall.ballModel = this.shapes.ball;
+      this.balls = [];
+      this.myColor = [];
+      for (let i = 1; i <= 25; i++) {
+        this.balls.push(new myBall(
+          getRandomNumVec(-boxSide, boxSide, 20, 20, -boxFront, boxFront),
+          getRandomNumVec(-30, 30, -30, 30, -30, 30),
+          getRandomNum(3, 4)));
+        this.myColor.push(Color.of(getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), 1));
       }
 
+      this.iteration = 0; // This is used to record the current number of iterations.
 
       this.submit_shapes(context, this.shapes);
 
       this.materials = {
-        phong: context.get_instance(Phong_Shader).material(Color.of(0.3, 0.3, 1, 1),
-          {ambient: 0.9, diffusivity: 0.5, specularity: 0.5, smoothness: 30})
+        ball: context.get_instance(Phong_Shader).material(Color.of(0.3, 0.3, 1, 1),
+          {ambient: 0.9, diffusivity: 0.5, specularity: 0.5, smoothness: 30}),
+        floor: context.get_instance(Phong_Shader).material(Color.of(0.5, 0.5, 0.5, 1),
+          {
+            ambient: 0.7, diffusivity: 0.5, specularity: 0.5, smoothness: 30,
+            texture: context.get_instance("assets/2.jpg", false)
+          })
       }
 
       this.lights = [new Light(Vec.of(-20, 20, 20, 1), Color.of(1, 1, 1, 1), 100000)];
@@ -55,40 +67,44 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
       this.key_triggered_button("Rotate the cubes", ["c"], () => this.rotation = !this.rotation);
     }
 
-    display(graphics_state) {
-      graphics_state.lights = this.lights;        // Use the lights stored in this.lights.
-      const t = graphics_state.animation_time / 1000, dt = graphics_state.animation_delta_time / 1000;
-
+    drawAndUpdateBalls(graphics_state, dt) {
       for (let T = 1; T <= 100; T++) {
-        this.shapes.forEach((ball) => ball.setupNewMove(dt / 100));
-        for (let i = 0; i < this.shapes.length; i++)
-          for (let j = i + 1; j < this.shapes.length; j++) {
-            myBall.checkBall(this.shapes[i], this.shapes[j]);
-            myBall.checkBall(this.shapes[j], this.shapes[i]);
+        this.iteration++;
+        this.balls.forEach((ball) => ball.setupNewMove(dt / 100));
+        for (let i = 0; i < this.balls.length; i++)
+          for (let j = i + 1; j < this.balls.length; j++) {
+            myBall.checkBall(this.balls[i], this.balls[j]);
+            myBall.checkBall(this.balls[j], this.balls[i]);
           }
-        this.shapes.forEach((ball) => {
+        this.balls.forEach((ball) => {
           ball.checkFloor();
           ball.checkLeft();
           ball.checkRight();
+          ball.checkFront();
+          ball.checkBack();
           ball.update();
         });
       }
+      this.balls.forEach((ball, i) => ball.draw(graphics_state,
+        this.materials.ball.override({color: this.myColor[i]})));
+    }
 
-      this.shapes.forEach((ball, i) => ball.draw(graphics_state,
-        this.materials.phong.override({color: this.myColor[i]})));
+    drawStaticObj(graphics_state) {
+      this.floorMat = Mat4.translation([0, myFloor, 0]).times(Mat4.scale([boxSide, 0, 30]))
+        .times(Mat4.rotation(Math.PI / 2, [1, 0, 0]));
+      this.shapes.floor.draw(graphics_state, this.floorMat, this.materials.floor);
+    }
+
+    display(graphics_state) {
+      graphics_state.lights = this.lights;        // Use the lights stored in this.lights.
+      const t = graphics_state.animation_time / 1000, dt = graphics_state.animation_delta_time / 1000;
+      this.drawAndUpdateBalls(graphics_state, dt);
+      this.drawStaticObj(graphics_state);
     }
   }
 
-const myFloor = -8;
-const leftSide = -13;
-const rightSide = 13;
-const eps = 0.00001;
-const springK = 1000;
-const resistance = 0.9;
-
-class myBall extends Subdivision_Sphere {
-  constructor(position = Vec.of(0, 0, 0), velocity = Vec.of(0, 0, 0), size = 1, mass = size) {
-    super(5);
+class myBall {
+  constructor(position = Vec.of(0, 0, 0), velocity = Vec.of(0, 0, 0), size = 1, mass = size ** 3) {
     this.position = position;
     this.velocity = velocity;
     this.force = Vec.of(0, 0, 0);  // This is a temporary variable, which is not a state.
@@ -108,7 +124,7 @@ class myBall extends Subdivision_Sphere {
   draw(graphics_state, material) {
     let mat = Mat4.translation(this.position).times(
       Mat4.scale(this.sizeVec.plus(this.sizeChange)));
-    super.draw(graphics_state, mat, material);
+    myBall.ballModel.draw(graphics_state, mat, material);
   }
 
   checkFloor() {
@@ -121,7 +137,7 @@ class myBall extends Subdivision_Sphere {
   }
 
   checkLeft() {
-    let change = Math.max(this.position[0] - leftSide, eps) - this.size;
+    let change = Math.max(this.position[0] - (-boxSide), eps) - this.size;
     if (change > 0) return;
     this.sizeChange[0] = change;
 
@@ -130,12 +146,30 @@ class myBall extends Subdivision_Sphere {
   }
 
   checkRight() {
-    let change = Math.max(rightSide - this.position[0], eps) - this.size;
+    let change = Math.max(boxSide - this.position[0], eps) - this.size;
     if (change > 0) return;
     this.sizeChange[0] = change;
 
     let F = springK * change;
     this.force = this.force.plus(Vec.of(F, 0, 0));
+  }
+
+  checkFront() {
+    let change = Math.max(boxFront - this.position[2], eps) - this.size;
+    if (change > 0) return;
+    this.sizeChange[2] = change;
+
+    let F = springK * change;
+    this.force = this.force.plus(Vec.of(0, 0, F));
+  }
+
+  checkBack() {
+    let change = Math.max(this.position[2] - (-boxFront), eps) - this.size;
+    if (change > 0) return;
+    this.sizeChange[2] = change;
+
+    let F = springK * -change;
+    this.force = this.force.plus(Vec.of(0, 0, F));
   }
 
   /**
@@ -171,7 +205,7 @@ class myBall extends Subdivision_Sphere {
     ball1.force = ball1.force.minus(a);
   }
 
-  setupNewMove(dt, force = Vec.of(0, -10 * this.mass, 0)) {
+  setupNewMove(dt, force = Vec.of(0, -gravity * this.mass, 0)) {
     this.velocity = this.velocity.times(Math.pow(resistance, dt));
     this.force = force;
     this.dt = dt; // This is used to pass the the dt parameter to the member functions.
