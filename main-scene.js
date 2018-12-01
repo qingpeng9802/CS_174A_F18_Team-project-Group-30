@@ -11,9 +11,10 @@ const boxSide = 20;
 const boxFront = 30;
 const eps = 0.00001;
 const springK = 90000;
-const springDam = 0.9;
-const resistance = 0.8;
-const gravity = 9.8;
+const springDam = 300;
+const resistance = 1.;
+const gravity = 30;
+var useGravity = true;
 
 window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
   class Assignment_Three_Scene extends Scene_Component {
@@ -39,13 +40,6 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
       myBall.ballModel = this.shapes.ball;
       this.balls = [];
       this.myColor = [];
-      for (let i = 1; i <= 25; i++) {
-        this.balls.push(new myBall(
-          getRandomNumVec(-boxSide, boxSide, 20, 20, -boxFront, boxFront),
-          getRandomNumVec(-30, 30, -30, 30, -30, 30),
-          getRandomNum(3, 4)));
-        this.myColor.push(Color.of(getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), 1));
-      }
 
       this.iteration = 0; // This is used to record the current number of iterations.
 
@@ -64,8 +58,39 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
       this.lights = [new Light(Vec.of(-20, 20, 20, 1), Color.of(1, 1, 1, 1), 100000)];
     }
 
+    switchGravity() {
+      useGravity = !useGravity;
+    }
+
+    makeRandomBall() {
+      this.balls.push(new myBall(
+        getRandomNumVec(-boxSide + 5, boxSide - 5, 30, 30, -boxFront + 5, boxFront - 5),
+        getRandomNumVec(-10, 10, 0, 10, -10, 10),
+        getRandomNum(3, 4)));
+      this.myColor.push(Color.of(getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), 1));
+    }
+
+    addTop() {
+      this.balls.push(new myBall(Vec.of(0, 12, 0), Vec.of(0, 0, 0), 4));
+      this.myColor.push(Color.of(getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), 1));
+    }
+
+    addLeft() {
+      this.balls.push(new myBall(Vec.of(-12, 0, 0), Vec.of(20, 0, 0), 4));
+      this.myColor.push(Color.of(getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), 1));
+    }
+
+    addRight() {
+      this.balls.push(new myBall(Vec.of(12, 0, 0), Vec.of(-20, 0, 0), 4));
+      this.myColor.push(Color.of(getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), 1));
+    }
+
     make_control_panel() { // TODO:  Implement requirement #5 using a key_triggered_button that responds to the 'c' key.
-      this.key_triggered_button("Rotate the cubes", ["c"], () => this.rotation = !this.rotation);
+      this.key_triggered_button("Generate a ball", ["G"], () => this.makeRandomBall());
+      this.key_triggered_button("addTop", ["T"], () => this.addTop());
+      this.key_triggered_button("addLeft", ["L"], () => this.addLeft());
+      this.key_triggered_button("addRight", ["R"], () => this.addRight());
+      this.key_triggered_button("switchGravity", ["S"], () => this.switchGravity());
     }
 
     drawAndUpdateBalls(graphics_state, dt) {
@@ -134,13 +159,14 @@ class myBall {
 
   chkB(direction, sign, location) {
     let r = this.position[direction] - location;
-    let change = Math.max(r * sign, eps) - this.size;
-    if (change > 0) return;
-    this.sizeChange[direction] = change;
+    if (r * sign > this.size)
+      return;
+    let x = this.size - Math.max(r * sign, eps);
+    this.sizeChange[direction] = -x;
 
     let F = Vec.of(0, 0, 0);
-    F[direction] = springK * -change;
-    F[direction] -= springDam * Math.abs(this.velocity[direction]);
+    F[direction] = springK * x;
+    F[direction] += -this.velocity[direction] * sign * springDam;
     F[direction] *= sign;
     this.force = this.force.plus(F);
   }
@@ -173,15 +199,17 @@ class myBall {
     }
     ball1.sizeChange = newSize.minus(ball1.sizeVec);
 
-    let de = ball2.velocity.minus(ball1.velocity).norm();
+    let dx = -ball2.velocity.minus(ball1.velocity).dot(position);
     let x = ball1.size - toContactPoint.norm();
 
-    let F = position.times(springK * x - springDam * de);
+    let F = position.times(springK * x + springDam * dx);
     ball2.force = ball2.force.plus(F);
     ball1.force = ball1.force.minus(F);
   }
 
   setupNewMove(dt, force = Vec.of(0, -gravity * this.mass, 0)) {
+    if (!useGravity)
+      force = Vec.of(0, 0, 0);
     this.velocity = this.velocity.times(Math.pow(resistance, dt));
     this.force = force;
     this.dt = dt; // This is used to pass the the dt parameter to the member functions.
