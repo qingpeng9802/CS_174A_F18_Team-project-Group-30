@@ -6,11 +6,12 @@ function getRandomNumVec(a, b, c, d, e, f) {
   return Vec.of(getRandomNum(a, b), getRandomNum(c, d), getRandomNum(e, f));
 }
 
-const myFloor = -8;
+const floor = -8;
 const boxSide = 20;
 const boxFront = 30;
 const eps = 0.00001;
 const springK = 90000;
+const springDam = 0.9;
 const resistance = 0.8;
 const gravity = 9.8;
 
@@ -77,11 +78,7 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
             myBall.checkBall(this.balls[j], this.balls[i]);
           }
         this.balls.forEach((ball) => {
-          ball.checkFloor();
-          ball.checkLeft();
-          ball.checkRight();
-          ball.checkFront();
-          ball.checkBack();
+          ball.checkBoundary();
           ball.update();
         });
       }
@@ -90,7 +87,7 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
     }
 
     drawStaticObj(graphics_state) {
-      this.floorMat = Mat4.translation([0, myFloor, 0]).times(Mat4.scale([boxSide, 0, 30]))
+      this.floorMat = Mat4.translation([0, floor, 0]).times(Mat4.scale([boxSide, 0, 30]))
         .times(Mat4.rotation(Math.PI / 2, [1, 0, 0]));
       this.shapes.floor.draw(graphics_state, this.floorMat, this.materials.floor);
     }
@@ -127,49 +124,25 @@ class myBall {
     myBall.ballModel.draw(graphics_state, mat, material);
   }
 
-  checkFloor() {
-    let change = Math.max(this.position[1] - myFloor, eps) - this.size;
-    if (change > 0) return;
-    this.sizeChange[1] = change;
-
-    let F = springK * -change;
-    this.force = this.force.plus(Vec.of(0, F, 0));
+  checkBoundary() {
+    this.chkB(1, 1, floor); // Floor
+    this.chkB(0, 1, -boxSide); // Left Side
+    this.chkB(0, -1, boxSide); // Right Side
+    this.chkB(2, -1, boxFront); // Front
+    this.chkB(2, 1, -boxFront); // Back
   }
 
-  checkLeft() {
-    let change = Math.max(this.position[0] - (-boxSide), eps) - this.size;
+  chkB(direction, sign, location) {
+    let r = this.position[direction] - location;
+    let change = Math.max(r * sign, eps) - this.size;
     if (change > 0) return;
-    this.sizeChange[0] = change;
+    this.sizeChange[direction] = change;
 
-    let F = springK * -change;
-    this.force = this.force.plus(Vec.of(F, 0, 0));
-  }
-
-  checkRight() {
-    let change = Math.max(boxSide - this.position[0], eps) - this.size;
-    if (change > 0) return;
-    this.sizeChange[0] = change;
-
-    let F = springK * change;
-    this.force = this.force.plus(Vec.of(F, 0, 0));
-  }
-
-  checkFront() {
-    let change = Math.max(boxFront - this.position[2], eps) - this.size;
-    if (change > 0) return;
-    this.sizeChange[2] = change;
-
-    let F = springK * change;
-    this.force = this.force.plus(Vec.of(0, 0, F));
-  }
-
-  checkBack() {
-    let change = Math.max(this.position[2] - (-boxFront), eps) - this.size;
-    if (change > 0) return;
-    this.sizeChange[2] = change;
-
-    let F = springK * -change;
-    this.force = this.force.plus(Vec.of(0, 0, F));
+    let F = Vec.of(0, 0, 0);
+    F[direction] = springK * -change;
+    F[direction] -= springDam * Math.abs(this.velocity[direction]);
+    F[direction] *= sign;
+    this.force = this.force.plus(F);
   }
 
   /**
@@ -188,7 +161,7 @@ class myBall {
     //  return;   // Never reach here.
 
     let position = toContactPoint.normalized();
-    let newSize = toContactPoint;
+    let newSize = toContactPoint.copy();
     for (let i = 0; i < 3; i++) {
       if (Math.abs(position[i]) < eps) {
         newSize[i] = ball1.size;
@@ -200,9 +173,12 @@ class myBall {
     }
     ball1.sizeChange = newSize.minus(ball1.sizeVec);
 
-    let a = position.times(springK * ball1.sizeChange.norm() / ball1.size);
-    ball2.force = ball2.force.plus(a);
-    ball1.force = ball1.force.minus(a);
+    let de = ball2.velocity.minus(ball1.velocity).norm();
+    let x = ball1.size - toContactPoint.norm();
+
+    let F = position.times(springK * x - springDam * de);
+    ball2.force = ball2.force.plus(F);
+    ball1.force = ball1.force.minus(F);
   }
 
   setupNewMove(dt, force = Vec.of(0, -gravity * this.mass, 0)) {
