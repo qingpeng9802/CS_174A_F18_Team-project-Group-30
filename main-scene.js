@@ -7,7 +7,7 @@ function getRandomNumVec(a, b, c, d, e, f) {
 }
 
 const floor = -8;
-const boxSide = 20;
+const boxSide = 30;
 const boxFront = 30;
 const eps = 0.00001;
 const springK = 90000;
@@ -62,27 +62,36 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
       useGravity = !useGravity;
     }
 
+    makeColor()
+    {
+      this.myColor.push(Color.of(getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), 1));
+    }
     makeRandomBall() {
       this.balls.push(new myBall(
-        getRandomNumVec(-boxSide + 5, boxSide - 5, 30, 30, -boxFront + 5, boxFront - 5),
+        getRandomNumVec(-boxSide + 5, boxSide - 5, 20, 20, -boxFront + 5, boxFront - 5),
         getRandomNumVec(-10, 10, 0, 10, -10, 10),
         getRandomNum(3, 4)));
-      this.myColor.push(Color.of(getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), 1));
+      this.makeColor();
     }
 
     addTop() {
       this.balls.push(new myBall(Vec.of(0, 12, 0), Vec.of(0, 0, 0), 4));
-      this.myColor.push(Color.of(getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), 1));
+      this.makeColor();
     }
 
     addLeft() {
       this.balls.push(new myBall(Vec.of(-12, 0, 0), Vec.of(20, 0, 0), 4));
-      this.myColor.push(Color.of(getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), 1));
+      this.makeColor();
     }
 
     addRight() {
       this.balls.push(new myBall(Vec.of(12, 0, 0), Vec.of(-20, 0, 0), 4));
-      this.myColor.push(Color.of(getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), 1));
+      this.makeColor();
+    }
+
+    addFront() {
+      this.balls.push(new myBall(Vec.of(0, 10, 20), Vec.of(0, 0, -200), 4));
+      this.makeColor();
     }
 
     make_control_panel() { // TODO:  Implement requirement #5 using a key_triggered_button that responds to the 'c' key.
@@ -90,13 +99,14 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
       this.key_triggered_button("addTop", ["T"], () => this.addTop());
       this.key_triggered_button("addLeft", ["L"], () => this.addLeft());
       this.key_triggered_button("addRight", ["R"], () => this.addRight());
+      this.key_triggered_button("addFront", ["F"], () => this.addFront());
       this.key_triggered_button("switchGravity", ["S"], () => this.switchGravity());
     }
 
     drawAndUpdateBalls(graphics_state, dt) {
-      for (let T = 1; T <= 100; T++) {
+      for (let T = 1; T <= 10; T++) {
         this.iteration++;
-        this.balls.forEach((ball) => ball.setupNewMove(dt / 100));
+        this.balls.forEach((ball) => ball.setupNewMove(dt / 10));
         for (let i = 0; i < this.balls.length; i++)
           for (let j = i + 1; j < this.balls.length; j++) {
             myBall.checkBall(this.balls[i], this.balls[j]);
