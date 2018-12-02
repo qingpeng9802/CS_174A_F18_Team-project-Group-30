@@ -16,8 +16,8 @@ const resistance = 1.;
 const gravity = 30;
 var useGravity = true;
 
-window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
-  class Assignment_Three_Scene extends Scene_Component {
+window.Project = window.classes.Project =
+  class Project extends Scene_Component {
     constructor(context, control_box)     // The scene begins by requesting the camera, shapes, and materials it will need.
     {
       super(context, control_box);    // First, include a secondary Scene that provides movement controls:
@@ -42,6 +42,7 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
       this.myColor = [];
 
       this.iteration = 0; // This is used to record the current number of iterations.
+      this.simulationPerSecond = 200;
 
       this.submit_shapes(context, this.shapes);
 
@@ -103,22 +104,18 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
       this.key_triggered_button("switchGravity", ["S"], () => this.switchGravity());
     }
 
-    drawAndUpdateBalls(graphics_state, dt) {
-      for (let T = 1; T <= 10; T++) {
-        this.iteration++;
-        this.balls.forEach((ball) => ball.setupNewMove(dt / 10));
-        for (let i = 0; i < this.balls.length; i++)
-          for (let j = i + 1; j < this.balls.length; j++) {
-            myBall.checkBall(this.balls[i], this.balls[j]);
-            myBall.checkBall(this.balls[j], this.balls[i]);
-          }
-        this.balls.forEach((ball) => {
-          ball.checkBoundary();
-          ball.update();
-        });
-      }
-      this.balls.forEach((ball, i) => ball.draw(graphics_state,
-        this.materials.ball.override({color: this.myColor[i]})));
+    simulate(graphics_state, dt) {
+      this.iteration++;
+      this.balls.forEach((ball) => ball.setupNewMove(dt));
+      for (let i = 0; i < this.balls.length; i++)
+        for (let j = i + 1; j < this.balls.length; j++) {
+          myBall.checkBall(this.balls[i], this.balls[j]);
+          myBall.checkBall(this.balls[j], this.balls[i]);
+        }
+      this.balls.forEach((ball) => {
+        ball.checkBoundary();
+        ball.update();
+      });
     }
 
     drawStaticObj(graphics_state) {
@@ -129,8 +126,12 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
 
     display(graphics_state) {
       graphics_state.lights = this.lights;        // Use the lights stored in this.lights.
-      const t = graphics_state.animation_time / 1000, dt = graphics_state.animation_delta_time / 1000;
-      this.drawAndUpdateBalls(graphics_state, dt);
+      const t = graphics_state.animation_time / 1000;
+      for (; this.iteration / this.simulationPerSecond < t;)
+        this.simulate(graphics_state, 1. / this.simulationPerSecond);
+
+      this.balls.forEach((ball, i) => ball.draw(graphics_state,
+        this.materials.ball.override({color: this.myColor[i]})));
       this.drawStaticObj(graphics_state);
     }
   }
@@ -171,7 +172,7 @@ class myBall {
     let r = this.position[direction] - location;
     if (r * sign > this.size)
       return;
-    let x = this.size - Math.max(r * sign, eps);
+    let x = this.size - Math.max(r * sign, 0.5);
     this.sizeChange[direction] = -x;
 
     let F = Vec.of(0, 0, 0);
@@ -226,57 +227,5 @@ class myBall {
     this.force = force;
     this.dt = dt; // This is used to pass the the dt parameter to the member functions.
     this.sizeChange = Vec.of(0, 0, 0);
-  }
-
-}
-
-class Texture_Scroll_X extends Phong_Shader {
-  fragment_glsl_code()           // ********* FRAGMENT SHADER *********
-  {
-    // TODO:  Modify the shader below (right now it's just the same fragment shader as Phong_Shader) for requirement #6.
-    return `
-        uniform sampler2D texture;
-        void main()
-        { if( GOURAUD || COLOR_NORMALS )    // Do smooth "Phong" shading unless options like "Gouraud mode" are wanted instead.
-          { gl_FragColor = VERTEX_COLOR;    // Otherwise, we already have final colors to smear (interpolate) across vertices.            
-            return;
-          }                                 // If we get this far, calculate Smooth "Phong" Shading as opposed to Gouraud Shading.
-                                            // Phong shading is not to be confused with the Phong Reflection Model.
-          vec2 newCoord =  f_tex_coord;
-          newCoord.x += mod(2. * animation_time, 1.);
-          vec4 tex_color = texture2D( texture, newCoord );                         // Sample the texture image in the correct place.
-                                                                                      // Compute an initial (ambient) color:
-          if( USE_TEXTURE ) gl_FragColor = vec4( ( tex_color.xyz + shapeColor.xyz ) * ambient, shapeColor.w * tex_color.w ); 
-          else gl_FragColor = vec4( shapeColor.xyz * ambient, shapeColor.w );
-          gl_FragColor.xyz += phong_model_lights( N );                     // Compute the final color with contributions from lights.
-        }`;
-  }
-}
-
-class Texture_Rotate extends Phong_Shader {
-  fragment_glsl_code()           // ********* FRAGMENT SHADER *********
-  {
-    // TODO:  Modify the shader below (right now it's just the same fragment shader as Phong_Shader) for requirement #7.
-    return `
-        #define PI 3.1415926535897932385
-        uniform sampler2D texture;
-        void main()
-        { if( GOURAUD || COLOR_NORMALS )    // Do smooth "Phong" shading unless options like "Gouraud mode" are wanted instead.
-          { gl_FragColor = VERTEX_COLOR;    // Otherwise, we already have final colors to smear (interpolate) across vertices.            
-            return;
-          }                                 // If we get this far, calculate Smooth "Phong" Shading as opposed to Gouraud Shading.
-                                            // Phong shading is not to be confused with the Phong Reflection Model.
-          vec2 newCoord = vec2( f_tex_coord.x - 0.5, f_tex_coord.y - 0.5);
-          float s = mod(animation_time * PI / 2., 2. * PI);
-          mat2 RotationMatrix = mat2(cos(s), sin(s), -sin(s), cos(s));
-          newCoord = RotationMatrix * newCoord;
-          newCoord.x += 0.5; newCoord.y += 0.5;
-          
-          vec4 tex_color = texture2D( texture, newCoord );                         // Sample the texture image in the correct place.
-                                                                                      // Compute an initial (ambient) color:
-          if( USE_TEXTURE ) gl_FragColor = vec4( ( tex_color.xyz + shapeColor.xyz ) * ambient, shapeColor.w * tex_color.w ); 
-          else gl_FragColor = vec4( shapeColor.xyz * ambient, shapeColor.w );
-          gl_FragColor.xyz += phong_model_lights( N );                     // Compute the final color with contributions from lights.
-        }`;
   }
 }
