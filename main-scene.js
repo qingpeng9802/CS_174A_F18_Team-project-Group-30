@@ -62,10 +62,10 @@ window.Assignment_Three_Scene = window.classes.Assignment_Three_Scene =
       useGravity = !useGravity;
     }
 
-    makeColor()
-    {
+    makeColor() {
       this.myColor.push(Color.of(getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), getRandomNum(0.2, 0.8), 1));
     }
+
     makeRandomBall() {
       this.balls.push(new myBall(
         getRandomNumVec(-boxSide + 5, boxSide - 5, 20, 20, -boxFront + 5, boxFront - 5),
@@ -187,16 +187,18 @@ class myBall {
    */
   static checkBall(ball1, ball2) {
     let towards = ball2.position.minus(ball1.position);
+    if (towards.every((x) => Math.abs(x) < eps))
+      towards = getRandomNumVec(-eps, eps, -eps, eps, -eps, eps);
     let dis = towards.norm();
     if (ball1.size + ball2.size < dis)
       return;
 
     let toContactPoint = towards.times(1 / (ball1.size + ball2.size) * ball1.size);
-
+    let toContactPointNorm = toContactPoint.norm();
     //if (toContactPoint.norm() > ball1.size)
     //  return;   // Never reach here.
 
-    let position = toContactPoint.normalized();
+    let position = toContactPoint.times(1 / toContactPointNorm);
     let newSize = toContactPoint.copy();
     for (let i = 0; i < 3; i++) {
       if (Math.abs(position[i]) < eps) {
@@ -210,7 +212,7 @@ class myBall {
     ball1.sizeChange = newSize.minus(ball1.sizeVec);
 
     let dx = -ball2.velocity.minus(ball1.velocity).dot(position);
-    let x = ball1.size - toContactPoint.norm();
+    let x = ball1.size - toContactPointNorm;
 
     let F = position.times(springK * x + springDam * dx);
     ball2.force = ball2.force.plus(F);
