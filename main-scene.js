@@ -32,13 +32,15 @@ window.Project = window.classes.Project =
 
       this.shapes = {
         ball: new Subdivision_Sphere(5),
-        floor: new Square
+        floor: new Square,
+        teapot: new Shape_From_File( "/assets/teapot.obj" ),
       };
 
-      myBall.ballModel = this.shapes.ball;
+      myBall.ballModel = this.shapes.teapot;
       this.balls = [];
       this.myColor = [];
       this.myTextures = [];
+      this.myTColor = [];
 
       this.iteration = 0; // This is used to record the current number of iterations.
       this.simulationPerSecond = 200;
@@ -56,27 +58,27 @@ window.Project = window.classes.Project =
       }
 
       this.texturematerials = {
-        brick: context.get_instance(Fake_Bump_Map).material(Color.of(0.1, 0.1, 0.1, 0.1),
+        brick: context.get_instance(Fake_Bump_Map).material(Color.of( .05,.05,.05,1 ),
           {
             ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10,
             texture: context.get_instance("assets/brick-texture.jpg")
           }),
-        fiber: context.get_instance(Fake_Bump_Map).material(Color.of(0.1, 0.1, 0.1, 0.1),
+        fiber: context.get_instance(Fake_Bump_Map).material(Color.of( .05,.05,.05,1 ),
           {
             ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10,
             texture: context.get_instance("assets/fiber-texture.jpg")
           }),
-        leather: context.get_instance(Fake_Bump_Map).material(Color.of(0.1, 0.1, 0.1, 0.1),
+        leather: context.get_instance(Fake_Bump_Map).material(Color.of( .05,.05,.05,1 ),
           {
             ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10,
             texture: context.get_instance("assets/leather-texture.jpg")
           }),
-        metal: context.get_instance(Fake_Bump_Map).material(Color.of(0.1, 0.1, 0.1, 0.1),
+        metal: context.get_instance(Fake_Bump_Map).material(Color.of( .05,.05,.05,1 ),
           {
             ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10,
             texture: context.get_instance("assets/metal-texture.jpg")
           }),
-        rock: context.get_instance(Fake_Bump_Map).material(Color.of(0.1, 0.1, 0.1, 0.1),
+        rock: context.get_instance(Fake_Bump_Map).material(Color.of( .05,.05,.05,1 ),
           {
             ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10,
             texture: context.get_instance("assets/rock-texture.jpg")
@@ -92,6 +94,11 @@ window.Project = window.classes.Project =
 
     diffTexture() {
       useTexture = !useTexture;
+    }
+
+    makeTColor()
+    {
+      this.myTColor.push(Color.of(getRandomNum(0.05, 0.2), getRandomNum(0.05, 0.2), getRandomNum(0.05, 0.2), 1));
     }
 
     makeColor() {
@@ -113,30 +120,35 @@ window.Project = window.classes.Project =
         getRandomNumVec(-10, 10, 0, 10, -10, 10),
         getRandomNum(3, 4)));
       this.makeColor();
+      this.makeTColor();
       this.makeTextures();
     }
 
     addTop() {
       this.balls.push(new myBall(Vec.of(0, 12, 0), Vec.of(0, 0, 0), 4));
       this.makeColor();
+      this.makeTColor();
       this.makeTextures();
     }
 
     addLeft() {
       this.balls.push(new myBall(Vec.of(-12, 0, 0), Vec.of(20, 0, 0), 4));
       this.makeColor();
+      this.makeTColor();
       this.makeTextures();
     }
 
     addRight() {
       this.balls.push(new myBall(Vec.of(12, 0, 0), Vec.of(-20, 0, 0), 4));
       this.makeColor();
+      this.makeTColor();
       this.makeTextures();
     }
 
     addFront() {
       this.balls.push(new myBall(Vec.of(0, 10, 20), Vec.of(0, 0, -200), 4));
       this.makeColor();
+      this.makeTColor();
       this.makeTextures();
     }
 
@@ -168,6 +180,8 @@ window.Project = window.classes.Project =
       this.floorMat = Mat4.translation([0, floor, 0]).times(Mat4.scale([boxSide, 0, 30]))
         .times(Mat4.rotation(Math.PI / 2, [1, 0, 0]));
       this.shapes.floor.draw(graphics_state, this.floorMat, this.materials.floor);
+      let model_transform = Mat4.identity();
+      this.shapes.teapot.draw( graphics_state, model_transform, this.texturematerials.leather);   // Draw the shapes.
     }
 
     display(graphics_state) {
@@ -178,7 +192,7 @@ window.Project = window.classes.Project =
 
       if (useTexture) {
         this.balls.forEach((ball, i) => ball.draw(graphics_state,
-          this.myTextures[i].override({color: this.myColor[i]})));
+          this.myTextures[i].override({color: this.myTColor[i]})));
       }
       else {
         this.balls.forEach((ball, i) => ball.draw(graphics_state,
