@@ -4,12 +4,18 @@
          window.classes = {}
          </script>
                                       <!--  Javascript "include" files.  Any code in them gets executed as part of the page loading: //-->
+<script>
+    let bg_color = 'white';
+</script>
 <script src="tiny-graphics.js" ></script>
 <script src= "dependencies.js" ></script>
 <script src=   "main-scene.js" ></script></head>
 <body style="background: White">       <!-- Begin typing your web page here. //-->
 
                               <!-- The following code embeds a WebGL canvas panel widget with certain scenes and their controls. //-->
+<div>
+  <button onclick="window.location.href = 'space.html'">Go to Space Scene</button>
+</div>
 <div id="main-canvas" class="canvas-widget"></div>
 <script> "use strict"     // ********************* THE ENTRY POINT OF YOUR WHOLE PROGRAM STARTS HERE *********************
                                            // Use this code to embed a widget into any web page.  The widget inclues a 3D WebGL area
