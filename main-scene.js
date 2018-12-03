@@ -16,6 +16,7 @@ const resistance = 1.;
 const gravity = 30;
 var useGravity = true;
 var useTexture = false;
+//var useObj = false;
 
 window.Project = window.classes.Project =
   class Project extends Scene_Component {
@@ -33,10 +34,10 @@ window.Project = window.classes.Project =
       this.shapes = {
         ball: new Subdivision_Sphere(5),
         floor: new Square,
-        teapot: new Shape_From_File( "/assets/teapot.obj" ),
+        //golfball: new Shape_From_File( "assets/golfball.obj" ),
       };
 
-      myBall.ballModel = this.shapes.teapot;
+      myBall.ballModel = this.shapes.ball;
       this.balls = [];
       this.myColor = [];
       this.myTextures = [];
@@ -95,7 +96,15 @@ window.Project = window.classes.Project =
     diffTexture() {
       useTexture = !useTexture;
     }
-
+/*
+    switchObj() {
+      useObj=!useObj;
+      if (useObj)
+       myBall.ballModel = this.shapes.golfball;
+      else
+       myBall.ballModel = this.shapes.ball;
+    }
+*/
     makeTColor()
     {
       this.myTColor.push(Color.of(getRandomNum(0.05, 0.2), getRandomNum(0.05, 0.2), getRandomNum(0.05, 0.2), 1));
@@ -160,6 +169,7 @@ window.Project = window.classes.Project =
       this.key_triggered_button("addFront", ["F"], () => this.addFront());
       this.key_triggered_button("switchGravity", ["S"], () => this.switchGravity());
       this.key_triggered_button("diffTexture", ["D"], () => this.diffTexture());
+      //this.key_triggered_button("switchObj", ["O"], () => this.switchObj());
     }
 
     simulate(graphics_state, dt) {
