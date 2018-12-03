@@ -42,7 +42,7 @@ window.SpaceScene = window.classes.SpaceScene =
       if (!context.globals.has_controls)
         context.register_scene_component(new Movement_Controls(context, control_box.parentElement.insertCell()));
 
-      context.globals.graphics_state.camera_transform = Mat4.look_at(Vec.of(0, 100, 20), Vec.of(0, 0, 0), Vec.of(0, 1, 0));
+      context.globals.graphics_state.camera_transform = Mat4.look_at(Vec.of(0, 100, 100), Vec.of(0, 0, 0), Vec.of(0, 1, 0));
       this.initial_camera_location = Mat4.inverse(context.globals.graphics_state.camera_transform);
 
       const r = context.width / context.height;
@@ -63,16 +63,34 @@ window.SpaceScene = window.classes.SpaceScene =
         }
       this.planets.push(
         new myBall(this.shapes.sphere, this.materials.sun.override({ color: Color.of(1, 0, 0, 1) }),
-          Vec.of(15,0,0),
-          Vec.of(0,0,4),
+          Vec.of(0,0,15),
+          Vec.of(5,0,0),
           5,
           100
         ),
         new myBall(this.shapes.sphere, this.materials.sun.override({ color: Color.of(1, 0, 0, 1) }),
-          Vec.of(-15, 0, 0),
-          Vec.of(0, 0, -4),
+          Vec.of(0, 0, -15),
+          Vec.of(-5, 0, 0),
           5,
           100
+        ),
+        new myBall(this.shapes.sphere, this.materials.planet.override({ color: Color.of(0, 1, 0.5, 1) }),
+          Vec.of(20, 0, 0),
+          Vec.of(0, 20, 0),
+          1,
+          1
+        ),
+        new myBall(this.shapes.sphere, this.materials.planet.override({ color: Color.of(0, 1, 0.5, 1) }),
+          Vec.of(-60, -20, 0),
+          Vec.of(0, 10, 0),
+          3,
+          20
+        ),
+        new myBall(this.shapes.sphere, this.materials.planet.override({ color: Color.of(0, 1, 0.5, 1) }),
+          Vec.of(-56, -20, 0),
+          Vec.of(0, 15, -5),
+          0.5,
+          0.1
         )
         );
       this.lights = [new Light(Vec.of(0, 0, 0, 1), Color.of(1, 1, 1, 1), 100000), new Light(Vec.of(-10, 20, 10, 1), Color.of(1, 1, 1, 1), 1000)];
@@ -81,7 +99,7 @@ window.SpaceScene = window.classes.SpaceScene =
     {
       this.key_triggered_button("View solar system", ["0"], () => this.attached = () => this.initial_camera_location);
       this.new_line();
-      this.key_triggered_button("Add planet", [" "], () => {
+      this.key_triggered_button("Add planet", ["1"], () => {
         this.planets.push(
           new myBall(this.shapes.sphere, 
             this.materials.planet.override({ color: Color.of(rand(0,0.5),rand(0.6,1),rand(0.6,1), 1) }),
@@ -122,9 +140,8 @@ window.SpaceScene = window.classes.SpaceScene =
               this.planets[i].position = (this.planets[i].position.plus(this.planets[j].position)).times(1/2);
               this.planets[i].velocity = 
                 (this.planets[i].velocity.times(this.planets[i].mass)).plus(this.planets[j].velocity.times(this.planets[j].mass)).times(1/(this.planets[i].mass + this.planets[j].mass));
-              this.planets[i].size = (this.planets[i].size + this.planets[j].size)/2;
+              this.planets[i].size = Math.sqrt (this.planets[i].size + this.planets[j].size + 1);
               this.planets[i].mass += this.planets[j].mass;
-              console.log('new')
           }
         }
       }
