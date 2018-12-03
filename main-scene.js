@@ -16,7 +16,7 @@ const resistance = 1.;
 const gravity = 30;
 var useGravity = true;
 var useTexture = false;
-//var useObj = false;
+var useObj = false;
 
 window.Project = window.classes.Project =
   class Project extends Scene_Component {
@@ -34,7 +34,7 @@ window.Project = window.classes.Project =
       this.shapes = {
         ball: new Subdivision_Sphere(5),
         floor: new Square,
-        //golfball: new Shape_From_File( "assets/golfball.obj" ),
+        golfball: new Shape_From_File( "/assets/golfball.obj" ),
       };
 
       myBall.ballModel = this.shapes.ball;
@@ -93,18 +93,22 @@ window.Project = window.classes.Project =
       useGravity = !useGravity;
     }
 
+    switchObj() {
+      useObj = !useObj;
+      if(useObj)
+      {
+        myBall.ballModel = this.shapes.golfball;
+      }
+      else
+      {
+        myBall.ballModel = this.shapes.ball;
+      }
+    }
+
     diffTexture() {
       useTexture = !useTexture;
     }
-/*
-    switchObj() {
-      useObj=!useObj;
-      if (useObj)
-       myBall.ballModel = this.shapes.golfball;
-      else
-       myBall.ballModel = this.shapes.ball;
-    }
-*/
+
     makeTColor()
     {
       this.myTColor.push(Color.of(getRandomNum(0.05, 0.2), getRandomNum(0.05, 0.2), getRandomNum(0.05, 0.2), 1));
@@ -169,7 +173,7 @@ window.Project = window.classes.Project =
       this.key_triggered_button("addFront", ["F"], () => this.addFront());
       this.key_triggered_button("switchGravity", ["S"], () => this.switchGravity());
       this.key_triggered_button("diffTexture", ["D"], () => this.diffTexture());
-      //this.key_triggered_button("switchObj", ["O"], () => this.switchObj());
+      this.key_triggered_button("switchObj", ["O"], () => this.switchObj());
     }
 
     simulate(graphics_state, dt) {
@@ -190,8 +194,6 @@ window.Project = window.classes.Project =
       this.floorMat = Mat4.translation([0, floor, 0]).times(Mat4.scale([boxSide, 0, 30]))
         .times(Mat4.rotation(Math.PI / 2, [1, 0, 0]));
       this.shapes.floor.draw(graphics_state, this.floorMat, this.materials.floor);
-      let model_transform = Mat4.identity();
-      this.shapes.teapot.draw( graphics_state, model_transform, this.texturematerials.leather);   // Draw the shapes.
     }
 
     display(graphics_state) {
