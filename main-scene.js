@@ -30,9 +30,6 @@ window.Project = window.classes.Project =
       const r = context.width / context.height;
       context.globals.graphics_state.projection_transform = Mat4.perspective(Math.PI / 4, r, .1, 1000);
 
-      // TODO:  Create two cubes, including one with the default texture coordinates (from 0 to 1), and one with the modified
-      //        texture coordinates as required for cube #2.  You can either do this by modifying the cube code or by modifying
-      //        a cube instance's texture_coords after it is already created.
       this.shapes = {
         ball: new Subdivision_Sphere(5),
         floor: new Square
@@ -143,7 +140,7 @@ window.Project = window.classes.Project =
       this.makeTextures();
     }
 
-    make_control_panel() { // TODO:  Implement requirement #5 using a key_triggered_button that responds to the 'c' key.
+    make_control_panel() {
       this.key_triggered_button("Generate a ball", ["G"], () => this.makeRandomBall());
       this.key_triggered_button("addTop", ["T"], () => this.addTop());
       this.key_triggered_button("addLeft", ["L"], () => this.addLeft());
