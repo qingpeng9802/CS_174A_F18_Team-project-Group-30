@@ -24,13 +24,13 @@ class Many_Lights_Demo extends Scene_Component         // How to make the illusi
     { super(   context, control_box );
       Object.assign( this, { rows: 20, columns: 35 } );                                       // Define how many boxes (buildings) to draw.
       context.globals.graphics_state.    camera_transform = Mat4.look_at( ...Vec.cast( [ this.rows/2,5,5 ], [this.rows/2,0,-4], [0,1,0] ) );
-      context.globals.graphics_state.projection_transform = Mat4.perspective( Math.PI/4, context.width/context.height, .1, 1000 );                 
-      
+      context.globals.graphics_state.projection_transform = Mat4.perspective( Math.PI/4, context.width/context.height, .1, 1000 );
+
       this.submit_shapes( context, { cube: new Cube() } );
-      this.brick = context.get_instance( Fake_Bump_Map ).material( Color.of( 1,1,1,1 ), 
-                            { ambient: .05, diffusivity: .5, specularity: .5, smoothness: 10, 
+      this.brick = context.get_instance( Fake_Bump_Map ).material( Color.of( 1,1,1,1 ),
+                            { ambient: .05, diffusivity: .5, specularity: .5, smoothness: 10,
                               texture: context.get_instance( "/assets/rgb.jpg" ) } );
-              
+
       this.box_positions = [];    this.row_lights = {};    this.column_lights = {};
       for( let row = 0; row < this.rows; row++ ) for( let column = 0; column < this.columns; column++ )   // Make initial grid of boxes
         this.box_positions.push( Vec.of( row, -2-2*Math.random(), -column ).randomized(1) );              // at random heights.
@@ -53,7 +53,7 @@ class Many_Lights_Demo extends Scene_Component         // How to make the illusi
         { this.column_lights[key][2] -= graphics_state.animation_delta_time/50;     // Move some lights forward along columns.
           this.column_lights[key][2] %= this.columns*2;                             // Bound them to a range.
         }
-      for( const [key,val] of Object.entries( this.row_lights ) ) 
+      for( const [key,val] of Object.entries( this.row_lights ) )
         { this.   row_lights[key][0] += graphics_state.animation_delta_time/50;     // Move other lights rightward along rows.
           this.   row_lights[key][0] %= this.rows*2;                                // Bound them to a range.
         }
@@ -61,7 +61,7 @@ class Many_Lights_Demo extends Scene_Component         // How to make the illusi
         { a[i] = p.plus( Vec.of( 0,0,graphics_state.animation_delta_time/1000 ) );           // Move the boxes backwards.
           if( a[i][2] > 1 ) a[i][2] = -this.columns + .001;                                  // Bound them to a range.
         } );
-    }                                                        
+    }
   show_explanation( document_element )
     { document_element.innerHTML += `<p>This demo shows how to make the illusion that there are many lights, despite the shader only being aware of two. The shader used here (class Phong_Model) is can only take two lights into account when coloring in a shape. This has the benefit of fewer lights that have to be looped through in the fragment shader, which has to run hundreds of thousands of times.
 
@@ -112,30 +112,30 @@ class Many_Lights_Demo extends Scene_Component         // How to make the illusi
       }
 
       this.texturematerials = {
-          brick: context.get_instance( Fake_Bump_Map ).material( Color.of( 0.1,0.1,0.1,0.1 ), 
-          { 
-            ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10, 
-            texture: context.get_instance( "/assets/brick-texture.jpg" ) 
+          brick: context.get_instance( Fake_Bump_Map ).material( Color.of( 0.1,0.1,0.1,0.1 ),
+          {
+            ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10,
+            texture: context.get_instance( "assets/brick-texture.jpg" )
           } ),
-          fiber:context.get_instance( Fake_Bump_Map ).material(  Color.of( 0.1,0.1,0.1,0.1 ), 
-          { 
-            ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10, 
-            texture: context.get_instance( "/assets/fiber-texture.jpg" ) 
+          fiber:context.get_instance( Fake_Bump_Map ).material(  Color.of( 0.1,0.1,0.1,0.1 ),
+          {
+            ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10,
+            texture: context.get_instance( "assets/fiber-texture.jpg" )
           } ),
-          leather:context.get_instance( Fake_Bump_Map ).material(  Color.of( 0.1,0.1,0.1,0.1 ), 
-          { 
-            ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10, 
-            texture: context.get_instance( "/assets/leather-texture.jpg" ) 
+          leather:context.get_instance( Fake_Bump_Map ).material(  Color.of( 0.1,0.1,0.1,0.1 ),
+          {
+            ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10,
+            texture: context.get_instance( "assets/leather-texture.jpg" )
           } ),
-          metal:context.get_instance( Fake_Bump_Map ).material(  Color.of( 0.1,0.1,0.1,0.1 ), 
-          { 
-            ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10, 
-            texture: context.get_instance( "/assets/metal-texture.jpg" ) 
+          metal:context.get_instance( Fake_Bump_Map ).material(  Color.of( 0.1,0.1,0.1,0.1 ),
+          {
+            ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10,
+            texture: context.get_instance( "assets/metal-texture.jpg" )
           } ),
-          rock:context.get_instance( Fake_Bump_Map ).material(  Color.of( 0.1,0.1,0.1,0.1 ), 
-          { 
-            ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10, 
-            texture: context.get_instance( "/assets/rock-texture.jpg" ) 
+          rock:context.get_instance( Fake_Bump_Map ).material(  Color.of( 0.1,0.1,0.1,0.1 ),
+          {
+            ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10,
+            texture: context.get_instance( "assets/rock-texture.jpg" )
           } ),
       }
 
@@ -155,7 +155,7 @@ class Many_Lights_Demo extends Scene_Component         // How to make the illusi
     }
 
     random_texturematerials( texturematerials_list = this.texturematerials )
-    { 
+    {
       const texturematerials_names = Object.keys( texturematerials_list );
       return texturematerials_list[ texturematerials_names[ ~~( texturematerials_names.length * Math.random() ) ] ]
     }
