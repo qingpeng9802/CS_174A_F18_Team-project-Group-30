@@ -1,6 +1,6 @@
 # Blender v2.78 (sub 0) OBJ File: 'Golf Ball.blend'
 # www.blender.org
-mtllib Golf Ball.mtl
+# mtllib Golf Ball.mtl
 o Icosphere
 v -0.034525 -0.974667 0.106258
 v 0.664852 -0.535822 0.483037

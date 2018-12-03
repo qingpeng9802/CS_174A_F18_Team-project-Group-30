@@ -34,7 +34,7 @@ window.Project = window.classes.Project =
       this.shapes = {
         ball: new Subdivision_Sphere(5),
         floor: new Square,
-        golfball: new Shape_From_File( "/assets/golfball.obj" ),
+        golfball: new Shape_From_File("assets/golfball.obj")
       };
 
       myBall.ballModel = this.shapes.ball;
@@ -59,27 +59,27 @@ window.Project = window.classes.Project =
       }
 
       this.texturematerials = {
-        brick: context.get_instance(Fake_Bump_Map).material(Color.of( .05,.05,.05,1 ),
+        brick: context.get_instance(Fake_Bump_Map).material(Color.of(.05, .05, .05, 1),
           {
             ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10,
             texture: context.get_instance("assets/brick-texture.jpg")
           }),
-        fiber: context.get_instance(Fake_Bump_Map).material(Color.of( .05,.05,.05,1 ),
+        fiber: context.get_instance(Fake_Bump_Map).material(Color.of(.05, .05, .05, 1),
           {
             ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10,
             texture: context.get_instance("assets/fiber-texture.jpg")
           }),
-        leather: context.get_instance(Fake_Bump_Map).material(Color.of( .05,.05,.05,1 ),
+        leather: context.get_instance(Fake_Bump_Map).material(Color.of(.05, .05, .05, 1),
           {
             ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10,
             texture: context.get_instance("assets/leather-texture.jpg")
           }),
-        metal: context.get_instance(Fake_Bump_Map).material(Color.of( .05,.05,.05,1 ),
+        metal: context.get_instance(Fake_Bump_Map).material(Color.of(.05, .05, .05, 1),
           {
             ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10,
             texture: context.get_instance("assets/metal-texture.jpg")
           }),
-        rock: context.get_instance(Fake_Bump_Map).material(Color.of( .05,.05,.05,1 ),
+        rock: context.get_instance(Fake_Bump_Map).material(Color.of(.05, .05, .05, 1),
           {
             ambient: 1, diffusivity: .5, specularity: .5, smoothness: 10,
             texture: context.get_instance("assets/rock-texture.jpg")
@@ -95,12 +95,10 @@ window.Project = window.classes.Project =
 
     switchObj() {
       useObj = !useObj;
-      if(useObj)
-      {
+      if (useObj) {
         myBall.ballModel = this.shapes.golfball;
       }
-      else
-      {
+      else {
         myBall.ballModel = this.shapes.ball;
       }
     }
@@ -109,8 +107,7 @@ window.Project = window.classes.Project =
       useTexture = !useTexture;
     }
 
-    makeTColor()
-    {
+    makeTColor() {
       this.myTColor.push(Color.of(getRandomNum(0.05, 0.2), getRandomNum(0.05, 0.2), getRandomNum(0.05, 0.2), 1));
     }
 
