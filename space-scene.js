@@ -13,7 +13,6 @@ class myBall {
     this.force = Vec.of(0, 0, 0);
     this.size = size;
     this.mass = mass;
-    this.sizeVec = Vec.of(size, size, size);
     this.sizeChange = Vec.of(0, 0, 0);  // SizeChange is always negative.
     this.material = material;
     this.model = model;
@@ -28,6 +27,8 @@ class myBall {
   }
 
   draw(graphics_state) {
+    this.sizeVec = Vec.of(this.size, this.size, this.size);
+
     let mat = Mat4.translation(this.position).times(
       Mat4.scale(this.sizeVec.plus(this.sizeChange)));
     this.model.draw(graphics_state, mat, this.material);
@@ -78,19 +79,16 @@ window.SpaceScene = window.classes.SpaceScene =
           Vec.of(20, 0, 0),
           Vec.of(0, 20, 0),
           1,
-          1
         ),
         new myBall(this.shapes.sphere, this.materials.planet.override({ color: Color.of(0, 1, 0.5, 1) }),
           Vec.of(-60, -20, 0),
           Vec.of(0, 10, 0),
           3,
-          20
         ),
         new myBall(this.shapes.sphere, this.materials.planet.override({ color: Color.of(0, 1, 0.5, 1) }),
           Vec.of(-56, -20, 0),
-          Vec.of(0, 15, -5),
+          Vec.of(0, 15, 4),
           0.5,
-          0.1
         )
         );
       this.lights = [new Light(Vec.of(0, 0, 0, 1), Color.of(1, 1, 1, 1), 100000), new Light(Vec.of(-10, 20, 10, 1), Color.of(1, 1, 1, 1), 1000)];
@@ -99,14 +97,32 @@ window.SpaceScene = window.classes.SpaceScene =
     {
       this.key_triggered_button("View solar system", ["0"], () => this.attached = () => this.initial_camera_location);
       this.new_line();
-      this.key_triggered_button("Add planet", ["1"], () => {
+      this.key_triggered_button("Add planet", ["0"], () => {
+        this.planets.push(
+          new myBall(this.shapes.sphere,
+            this.materials.planet.override({ color: Color.of(rand(0, 0.5), rand(0.6, 1), rand(0.6, 1), 1) }),
+            Vec.of(rand(10, 30), rand(-20, 20), rand(-20, 20)),
+            Vec.of(0,0 , rand(-10, -30)),
+            rand(1, 3)
+          ));
+      });
+      this.key_triggered_button("Add Random planet", ["1"], () => {
         this.planets.push(
           new myBall(this.shapes.sphere, 
             this.materials.planet.override({ color: Color.of(rand(0,0.5),rand(0.6,1),rand(0.6,1), 1) }),
             Vec.of(rand(-50,50), rand(-10, 10), rand(-50, 50)),
             Vec.of(rand(-10, 10), rand(-10, 10), rand(-10, 10)),
-            rand(0.2,2)
+            rand(1,3)
             ));
+      });
+      this.key_triggered_button("Add Star", ["2"], () => {
+        this.planets.push(
+          new myBall(this.shapes.sphere, this.materials.sun.override({ color: Color.of(1, 0, 0, 1) }),
+           Vec.of(rand(50,70), rand(-50, 50), rand(-50, 50)),
+            Vec.of(-this.planets[0].velocity[0]*2, rand(-15, 15), -this.planets[1].velocity[2]*2),
+          5,
+          100
+        ))
       });
       this.new_line();
       this.key_triggered_button("Decrease G", ["-"], () => {
@@ -140,7 +156,7 @@ window.SpaceScene = window.classes.SpaceScene =
               this.planets[i].position = (this.planets[i].position.plus(this.planets[j].position)).times(1/2);
               this.planets[i].velocity = 
                 (this.planets[i].velocity.times(this.planets[i].mass)).plus(this.planets[j].velocity.times(this.planets[j].mass)).times(1/(this.planets[i].mass + this.planets[j].mass));
-              this.planets[i].size = Math.sqrt (this.planets[i].size + this.planets[j].size + 1);
+              this.planets[i].size = Math.pow(this.planets[i].size ** 3 + this.planets[j].size ** 3, 1/3);
               this.planets[i].mass += this.planets[j].mass;
           }
         }
